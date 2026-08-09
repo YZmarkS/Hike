@@ -58,30 +58,35 @@ library Models
 
     build-depends: 
 
-    hs-source-dirs: Models
+    hs-source-dirs: App
 
     exposed-modules: Model
+                   , Model.Enum
 
     default-language: GHC2021
 
-library Endpoints
+library Endpoints    
     import: Dependencies
-
+    
     ghc-options: -Wall
 
     build-depends: Models
 
     hs-source-dirs: App
 
-    other-modules: Routes.Location
-                 , Routes.Users
-                 , Handlers.Location
-                 , Handlers.Users
+    exposed-modules: API
+                   , API.Endpoint
+                   , API.Endpoint.Place
+
+    other-modules: Model
+                 , Model.Enum
                  
     default-language: GHC2021
+    
 
 executable Hike
     import:           Dependencies
+    
     ghc-options: -Wall -threaded
 
     main-is:          Main.hs
@@ -92,9 +97,10 @@ executable Hike
     build-depends: Models
                  , Endpoints
 
-    other-modules: Routes.Location
-                 , Handlers.Location
-
+    other-modules: Model
+                 , Model.Enum
+                 , API.Endpoint.Place
+    
     hs-source-dirs: App
 
     default-language: GHC2021
