@@ -53,7 +53,8 @@ common Dependencies
 
 library Models
     import: Dependencies
-    
+
+    -- ghc-options: -Wall -threaded -ddump-tc -ddump-ds-preopt
     ghc-options: -Wall
 
     build-depends: 
@@ -77,6 +78,7 @@ library Endpoints
     exposed-modules: API
                    , API.Endpoint
                    , API.Endpoint.Place
+                   , API.Endpoint.Trip
 
     other-modules: Model
                  , Model.Enum
@@ -97,9 +99,11 @@ executable Hike
     build-depends: Models
                  , Endpoints
 
-    other-modules: Model
+    other-modules: API.Endpoint.Place
+                 , API.Endpoint.Trip
+                 , Model
                  , Model.Enum
-                 , API.Endpoint.Place
+                 , WarpApp
     
     hs-source-dirs: App
 
@@ -107,4 +111,4 @@ executable Hike
 
 
 
---     ghc-options: -Wall -threaded -ddump-tc -ddump-ds-preopt
+    
