@@ -40,6 +40,7 @@ User json
 
 Trip json
     name Text
+    UniqueName name
     deriving Eq Show Ord
 
 Goal json
