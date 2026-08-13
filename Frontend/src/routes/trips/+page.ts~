@@ -1,0 +1,28 @@
+import type { PageLoad } from './$types';
+import axios from "axios"
+
+type Trip = {
+  id: number
+  name: string
+}
+
+export const load: PageLoad = ({ params }) => {
+
+  let result : Trip[] = []
+
+  axios.request<Trip[]>({
+    url: "http://localhost:8081/trip",
+    method: 'get',
+    headers: {
+      'Access-Control-Allow-Origins' : '*',
+      'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE,PATCH,OPTIONS'
+    }
+  }).then((response) => {
+    result = response.data
+  }).catch((error) => {
+    console.log(error)
+  }).finally(() => {
+    console.log("Done")
+  });
+  return { trips: result }
+}

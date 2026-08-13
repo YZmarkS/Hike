@@ -1,0 +1,12 @@
+<script lang="ts">
+  import type { PageProps } from './$types';
+  let { data } : PageProps = $props()
+</script>
+
+<ul>
+  {#each data.trips as trip}
+    <li>
+      {trip}
+    </li>
+  {/each}
+</ul>
