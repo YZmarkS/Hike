@@ -13,6 +13,10 @@ import API.Endpoint.Place
 import API.Endpoint.Trip
 import Servant
 
+-- The following packages are useful for dev, but think about them when deploy
+import Network.Wai.Middleware.Cors
+import Network.Wai.Middleware.Servant.Options
+
 type WarpLogFunc = (Request -> Status -> Maybe Integer -> IO ())
 
 monadLoggerToWarpLogger :: LogFunc -> WarpLogFunc
@@ -32,9 +36,14 @@ type API = PlaceAPI :<|> TripAPI
 
 warpApplication :: ConnectionPool -> Application
 warpApplication pool =
+  simpleCors $
+  provideOptions (Proxy :: Proxy API) $
   serve
   (Proxy :: Proxy API)
-  (postPlaceServer pool :<|> postTripServer pool :<|> getTripsServer pool)
+  (postPlaceServer pool
+   :<|> postTripServer pool
+   :<|> getTripsServer pool
+   :<|> deleteTripServer pool)
 
 warpWebServer :: ConnectionPool -> LoggingT IO ()
 warpWebServer pool = LoggingT $

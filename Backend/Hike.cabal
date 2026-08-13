@@ -46,10 +46,14 @@ common Dependencies
                  , warp
                  , servant ^>= 0.20.3.0
                  , servant-server
+                 , servant-js
                  , persistent
                  , persistent-sqlite
                  , monad-logger
                  , conduit
+                 -- The following packages are mostly for dev, should remove when production
+                 , wai-cors
+                 , servant-options
 
 library Models
     import: Dependencies
@@ -109,6 +113,26 @@ executable Hike
 
     default-language: GHC2021
 
-
-
+executable JS
+    import:           Dependencies
     
+    ghc-options: -Wall -threaded
+
+    main-is:          Main.hs
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+
+    build-depends: Models
+                 , Endpoints
+
+    other-modules: API.Endpoint.Place
+                 , API.Endpoint.Trip
+                 , Model
+                 , Model.Enum
+    
+    hs-source-dirs: JS
+                  , App
+
+    default-language: GHC2021
+

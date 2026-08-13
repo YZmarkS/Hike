@@ -6,6 +6,7 @@ module API.Endpoint.Trip
   ( TripAPI
   , postTripServer
   , getTripsServer
+  , deleteTripServer
   ) where
 
 import Data.String
@@ -31,8 +32,15 @@ postTripServer pool trip = do
 
 type GetTrips = "trip" :> Get '[JSON] [Entity Trip]
 
-getTripsServer :: ConnectionPool -> Handler [Entity Trip]
+getTripsServer :: ConnectionPool -> Server GetTrips
 getTripsServer pool = do
   liftIO $ runSqlPool (selectList [] []) pool
 
-type TripAPI = PostTrip :<|> GetTrips
+type DeleteTrip = "trip" :> QueryParam' '[Required, Strict] "id" TripId :> Delete '[JSON] String
+
+deleteTripServer :: ConnectionPool -> TripId -> Handler String
+deleteTripServer pool tripId = do
+  liftIO $ runSqlPool (deleteWhere [TripId ==. tripId]) pool
+  return "Deleted"
+
+type TripAPI = PostTrip :<|> GetTrips :<|> DeleteTrip

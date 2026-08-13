@@ -11,18 +11,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
-module Model
-  ( module Model.Enum
-  , User(..)
-  , Trip(..)
-  , Goal(..)
-  , Place(..)
-  , ItineraryItem(..)
-  , Leg(..)
-  , PartOf(..)
-  , ContributeTo(..)
-  , migrateAll
-  ) where
+module Model where
 
 import Data.Time
 import Data.Text
