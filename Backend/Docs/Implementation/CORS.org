@@ -1,0 +1,6 @@
+#+TITLE: Corss-Origin Resource Sharing
+
+* What is it and how to handle it
+
+
+* Useful tools when when dev env
