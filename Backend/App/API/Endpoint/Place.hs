@@ -12,10 +12,10 @@ import Database.Persist.Sql
 import Servant
 import Model
 
-type PostPlace = "place" :> ReqBody '[JSON] Place :> PostCreated '[JSON] (Key Place)
+type PostPlace = Capture "trip_id" (Key Trip) :> ReqBody '[JSON] Place :> PostCreated '[JSON] (Key Place)
 
 postPlaceServer :: ConnectionPool -> Server PostPlace
-postPlaceServer pool place = do
+postPlaceServer pool tripId place = do
   sqlResult <- liftIO $ runSqlPool (insertBy place) pool
   case sqlResult of
     Left _ -> throwError $ err409 { errBody = "Place already exists" }

@@ -49,20 +49,19 @@ Place json
 
 ItineraryItem json
     ownerId UserId
-    from PlaceId
-    to PlaceId
-    startTime UTCTime
-    endTime UTCTime
+    mainPlace PlaceId
     timezone Int
-    prevId ItineraryItemId Maybe
-    nextId ItineraryItemId Maybe
     deriving Eq Show Ord
 
+Route json
+    from PlaceId
+    to PlaceId
+    startTime UTCTime Maybe
+    endTime UTCTime Maybe
+
 Leg json
-    itineraryId ItineraryItemId
-    -- | route id
-    prevId LegId Maybe
-    nextId LegId Maybe
+    routeId RouteId
+    order Int
     transitMode TransitMode
     deriving Eq Show
 
