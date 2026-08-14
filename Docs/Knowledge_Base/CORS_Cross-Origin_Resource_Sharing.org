@@ -1,0 +1,94 @@
+#+TITLE: Cross-Origin Resource Sharing (CORS)
+
+* Intuition
+
+Nowadays, when visiting a website at ~A.com~, it is often the webpage will make further requests to other hosts (~B.com, C.com, ...~) for data to populate the page.
+
+Cross-Origin Resource Sharing (CORS) defines the way to perform this action safely.
+
+* An Attack Method using CORS
+
+Example adapted from Mozilla MDN documentation [fn:1] and a friend.
+
+Consider a piece of JavaScript hosted on the server ~Mallory.com~:
+
+#+begin_src javascript
+  var xhr = new XMLHttpRequest();
+  // ... setup
+
+  // Make request to the transfer endpoint
+  xhr.open('POST', 'Bank.com/transfer_to');
+  // Send 1 billion to Mallory's account
+  xhr.send(JSON.stringify({ to: "Mallory's Account", amount: 1e9 });
+#+end_src
+
+Because the request to ~Bank.com/transfer_to~ is sent to a different host than the origin of the JavaScript snippet (~Mallory.com~), this is considered a CORS.
+
+Upon visiting the malicious site ~Mallory.com~, the malicious server will send the above snippet to the browser to be executed, causing the user of the browser to make an unintended request.
+
+* Solution
+
+Instead of immediately making the ~POST~ request to ~Bank.com/transfer_to~, the browser first performs a /preflight/ ~OPTIONS~ requestion to ~Bank.com/transfer_to~.
+
+The response to the /preflight request/ contains CORS details informing how to safely share the resources with other hosts.
+
+In the case of the bank, the response to the preflight request may be the following:
+#+begin_src
+  HTTP/x.x 204 No Content
+  ...
+  Access-Control-Allow-Origin: https://BankWebsite.com
+  ...
+#+end_src
+
+The ~Access-Control-Allow-Origin~ header tells us the ~Bank.com~ only wants to receive requests made by JavaScript code that originated from the host ~BankWebsite.com~ (which is likely the frontend website of the bank).
+
+** How does this address the attack?
+
+Again, suppose the browser receives the malicious code from ~Mallory.com~.
+The browser tracks that the malicious code came from ~Mallory.com~.
+The browser notices the origin of the malicious code is not on the list of allowed ~Access-Control-Allow-Origin~ in the preflight request responnd (likely meaning ~Mallory.com~ is not trusted by ~Bank.com~).
+Thus the browser refuses to make the actual ~POST~ request, preventing unintended transaction. 
+
+* Development Scenarios
+
+** Simple Requests
+
+In theory, there are requests that don't trigger a preflight request, which are called [[https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#simple_requests][/simple requests]]/ [fn:1].
+
+However, when using tools like Axios, the library often inserts additional headers that does not belong on the list of /CORS-safelisted request-headers/ [fn:1], making the request /not simple/. 
+
+** ~Access-Control-Allow-Origin: *~
+
+During development, it is often the frontend and backend app are both running on ~localhost~ but on different ports. This will trigger the condition and cause the browser to make a  preflight request.
+
+In the development environment, all the request our backend receives are from trusted sources. Thus, we trust whatever origin the request came from.
+
+Thus, the backend server can safely responds to all preflight request with the following header, indicating all sources of requests are trusted:
+#+begin_src
+  Access-Control-Allow-Origin: *
+#+end_src
+
+In practice, this is often done by middleware that handles ~OPTIONS~ requests and insert the header. 
+
+*On deployment, it is important to address CORS seriously*. Remove the convenient middlewares, and implement responses to ~OPTIONS~ properly.
+
+* Other CORS Headers [fn:2]
+
+A preflight request also have the following header to check whether the header of the request about to be made are accepted by the server:
+#+begin_src
+  Access-Control-Request-Headers: ...
+#+end_src
+
+In return, the server should respond to the preflight request with the following headers:
+
+- ~Access-Control-Allow-Origin~ :: See above.
+- ~Access-Control-Allow-Methods~ :: The list of methods accepted by the endpoint.
+- ~Access-Control-Allow-Headers~ :: The list of headers that are accepted by the endpoint.
+- ~Access-Control-Max-Age~ :: The maximum length of time the preflight request respond can be cached for.
+
+* Footnotes
+
+[fn:1] Mozilla MDN, Cross-Origin Resource Sharing: [[https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#simple_requests][Simple Request]]
+
+[fn:2] Mozilla MDN, Cross-Origin Resource Sharing: [[https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS#preflighted_requests][Preflight Requests]]
+
