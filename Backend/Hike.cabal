@@ -58,8 +58,7 @@ common Dependencies
 library Models
     import: Dependencies
 
-    -- ghc-options: -Wall -threaded -ddump-tc -ddump-ds-preopt
-    ghc-options: -Wall
+    ghc-options: -Wall -threaded -ddump-splices -ddump-tc -ddump-ds-preopt -ddump-to-file
 
     build-depends: 
 
