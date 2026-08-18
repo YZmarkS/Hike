@@ -28,6 +28,7 @@ User json
     deriving Eq Show Ord
 
 Trip json
+    ownerId UserId
     name Text
     UniqueName name
     deriving Eq Show Ord
@@ -35,16 +36,19 @@ Trip json
 Goal json
     tripId TripId
     creatorId UserId
+    name Text
+    note Text Maybe
     achieved Bool
-    parentGoalId GoalId
+    parentGoalId GoalId Maybe
     deriving Eq Show Ord
 
 Place json
+    tripId TripId
     latitude Double
     longitude Double
     name Text Maybe
     note Text Maybe
-    UniqueCoordinate latitude longitude
+    UniqueCoordinateInTrip latitude longitude tripId
     deriving Eq Show Ord
 
 ItineraryItem json

@@ -3,14 +3,13 @@ module WarpApp
   ( warpWebServer
   ) where
 
-import           Database.Persist.Sqlite
-import           Control.Monad.Logger
+import Database.Persist.Sqlite
+import Control.Monad.Logger
 
 import Network.HTTP.Types.Status
 import Network.Wai
 import Network.Wai.Handler.Warp
-import API.Endpoint.Place
-import API.Endpoint.Trip
+import API
 import Servant
 
 -- The following packages are useful for dev, but think about them when deploy
@@ -40,10 +39,11 @@ warpApplication pool =
   provideOptions (Proxy :: Proxy API) $
   serve
   (Proxy :: Proxy API)
-  (postPlaceServer pool
-   :<|> postTripServer pool
-   :<|> getTripsServer pool
-   :<|> deleteTripServer pool)
+  ((postPlaceServer pool
+    :<|> getPlacesServer pool)
+    :<|> (postTripServer pool
+          :<|> getTripsServer pool
+          :<|> deleteTripServer pool))
 
 warpWebServer :: ConnectionPool -> LoggingT IO ()
 warpWebServer pool = LoggingT $
