@@ -102,11 +102,15 @@ executable Hike
     build-depends: Models
                  , Endpoints
 
-    other-modules: API.Endpoint.Place
+    other-modules: API
+                 , API.Endpoint
+                 , API.Endpoint.Place
                  , API.Endpoint.Trip
                  , Model
                  , Model.Enum
                  , WarpApp
+                 , Seed
+                 , Config
     
     hs-source-dirs: App
 
@@ -125,7 +129,9 @@ executable JS
     build-depends: Models
                  , Endpoints
 
-    other-modules: API.Endpoint.Place
+    other-modules: API
+                 , API.Endpoint
+                 , API.Endpoint.Place
                  , API.Endpoint.Trip
                  , Model
                  , Model.Enum
@@ -134,4 +140,3 @@ executable JS
                   , App
 
     default-language: GHC2021
-

@@ -2,19 +2,17 @@
 
 module Main (main) where
 
-
-
-import           Database.Persist.Sqlite
-import           Control.Monad.Logger
-import Model
+import Config
+import Control.Monad.Logger
+import Database.Persist.Sqlite
+import Seed
+import System.Directory
 import WarpApp
-
-
-sqliteConnInfo :: SqliteConnectionInfo
-sqliteConnInfo = mkSqliteConnectionInfo "data.db"
 
 main :: IO ()
 main = do
-  runSqliteInfo sqliteConnInfo $ runMigration migrateAll
+  absoluteDBPath <- makeAbsolute sqliteDBPath
+  deleteDBFile absoluteDBPath
+  seed
   runStderrLoggingT $
     withSqlitePoolInfo sqliteConnInfo 10 warpWebServer
