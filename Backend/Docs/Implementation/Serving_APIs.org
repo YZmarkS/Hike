@@ -14,7 +14,7 @@ In the ~servant~ framework, APIs are defined as types [fn:1].
 ** Server
 
 Suppose we have an API defined, where the response type is expected to be ~Entity~. A simple handler for the said API will have the type ~(Handler Entity)~. 
-~(Handler a)~ is shorthand for (~ExceptT Server Error IO a)~. To paraphrase the ~servant~ tutorial, ~Handler~ is the simplest monad that allows for 3 things:
+~(Handler a)~ is shorthand for ~(ExceptT Server Error IO a)~. To paraphrase the ~servant~ tutorial, ~Handler~ is the simplest monad that allows for 3 things:
 1. Return result on success,
 2. Return error on failure,
 3. Perform IO. [fn:2]
