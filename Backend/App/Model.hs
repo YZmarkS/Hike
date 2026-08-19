@@ -25,43 +25,45 @@ User json
     username Text
     email Text
     UniqueEmail email
-    deriving Eq Show Ord
+    deriving Eq Show
 
 Trip json
     ownerId UserId
     name Text
-    UniqueName name
-    deriving Eq Show Ord
+    UniqueUserName ownerId name
+    deriving Eq Show
 
 Goal json
     tripId TripId
     creatorId UserId
     name Text
     note Text Maybe
-    achieved Bool
+    completed Bool
     parentGoalId GoalId Maybe
-    deriving Eq Show Ord
+    deriving Eq Show
 
 Place json
     tripId TripId
+    creatorId UserId
     latitude Double
     longitude Double
     name Text Maybe
     note Text Maybe
     UniqueCoordinateInTrip latitude longitude tripId
-    deriving Eq Show Ord
+    deriving Eq Show
 
 ItineraryItem json
-    ownerId UserId
+    tripId TripId
+    creatorId UserId
     mainPlace PlaceId
-    timezone Int
-    deriving Eq Show Ord
+    startTime UTCTime Maybe
+    endTime UTCTime Maybe
+    deriving Eq Show
 
 Route json
     from PlaceId
     to PlaceId
-    startTime UTCTime Maybe
-    endTime UTCTime Maybe
+    deriving Eq Show
 
 Leg json
     routeId RouteId
@@ -69,13 +71,19 @@ Leg json
     transitMode TransitMode
     deriving Eq Show
 
+Membership json
+    userId UserId
+    tripId TripId
+    UniqueUserInTrip userId tripId
+    deriving Eq Show
+
 PartOf json
     placeId PlaceId
     itineraryId ItineraryItemId
-    deriving Eq Show Ord
+    deriving Eq Show
 
 ContributeTo json
     itineraryId ItineraryItemId
     goalId GoalId
-    deriving Eq Show Ord
+    deriving Eq Show
 |]

@@ -49,6 +49,7 @@ common Dependencies
                  , servant-js
                  , persistent
                  , persistent-sqlite
+                 , esqueleto
                  , monad-logger
                  , conduit
                  -- The following packages are mostly for dev, should remove when production
@@ -80,8 +81,10 @@ library Endpoints
 
     exposed-modules: API
                    , API.Endpoint
-                   , API.Endpoint.Place
+                   , API.Endpoint.User
                    , API.Endpoint.Trip
+                   , API.Endpoint.Membership
+                   , API.Endpoint.Place
 
     other-modules: Model
                  , Model.Enum
@@ -106,6 +109,9 @@ executable Hike
                  , API.Endpoint
                  , API.Endpoint.Place
                  , API.Endpoint.Trip
+                 , API.Endpoint.User
+                 , API.Endpoint.Itinerary
+                 , API.Endpoint.Membership
                  , Model
                  , Model.Enum
                  , WarpApp
@@ -133,6 +139,9 @@ executable JS
                  , API.Endpoint
                  , API.Endpoint.Place
                  , API.Endpoint.Trip
+                 , API.Endpoint.User
+                 , API.Endpoint.Itinerary
+                 , API.Endpoint.Membership
                  , Model
                  , Model.Enum
     

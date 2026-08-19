@@ -1,7 +1,11 @@
 module API.Endpoint
-  ( module API.Endpoint.Place
+  ( module API.Endpoint.User
+  , module API.Endpoint.Place
   , module API.Endpoint.Trip
+  , module API.Endpoint.Membership
   ) where
 
-import API.Endpoint.Place
+import API.Endpoint.User
 import API.Endpoint.Trip
+import API.Endpoint.Place
+import API.Endpoint.Membership

@@ -25,7 +25,7 @@ postPlaceServer pool pathTripId place = do
     Left _ -> throwError $ err409 { errBody = "Place already exists" }
     Right newId -> return newId
 
-type GetPlaces = Capture "trip_id" TripId :> Get '[JSON] [Entity Place]
+type GetPlaces = Capture "trip_id" TripId :> "places" :> Get '[JSON] [Entity Place]
 
 getPlacesServer :: ConnectionPool -> Server GetPlaces
 getPlacesServer pool tripId = do

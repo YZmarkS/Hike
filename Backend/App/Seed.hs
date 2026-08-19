@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Seed where
+module Seed
+  ( deleteDBFile
+  , seed
+  ) where
 
 import Config
 import Control.Monad
@@ -49,3 +52,10 @@ seed = runSqliteInfo sqliteConnInfo $ do
   tripKeys <- insertMany tripRecords
   let tripEntities = zipWith Entity tripKeys tripRecords
   liftIO $ mapM_ print tripEntities
+  -- Make some membership
+  let membershipRecords = [ Membership (userKeys !! 2) (tripKeys !! 0)
+                          , Membership (userKeys !! 3) (tripKeys !! 1)
+                          ]
+  membershipKeys <- insertMany membershipRecords
+  let membershipEntities = zipWith Entity membershipKeys membershipRecords
+  liftIO $ mapM_ print membershipEntities

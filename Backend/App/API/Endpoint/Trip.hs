@@ -38,7 +38,7 @@ getTripsServer pool = do
 
 type DeleteTrip = "trip" :> QueryParam' '[Required, Strict] "id" TripId :> Delete '[JSON] String
 
-deleteTripServer :: ConnectionPool -> TripId -> Handler String
+deleteTripServer :: ConnectionPool -> Server DeleteTrip
 deleteTripServer pool tripId = do
   liftIO $ runSqlPool (deleteWhere [TripId ==. tripId]) pool
   return "Deleted"
