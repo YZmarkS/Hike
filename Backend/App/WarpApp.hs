@@ -31,7 +31,7 @@ warpSetting logFunc =
   setLogger (monadLoggerToWarpLogger logFunc) $
   setPort 8081 defaultSettings
 
-type API = PlaceAPI :<|> TripAPI
+type API = UserAPI :<|> TripAPI :<|> PlaceAPI :<|> MembershipAPI
 
 warpApplication :: ConnectionPool -> Application
 warpApplication pool =
@@ -39,11 +39,10 @@ warpApplication pool =
   provideOptions (Proxy :: Proxy API) $
   serve
   (Proxy :: Proxy API)
-  ((postPlaceServer pool
-    :<|> getPlacesServer pool)
-    :<|> (postTripServer pool
-          :<|> getTripsServer pool
-          :<|> deleteTripServer pool))
+  (postUserServer pool
+    :<|> (postTripServer pool :<|> getTripsServer pool :<|> deleteTripServer pool)
+    :<|> (postPlaceServer pool :<|> getPlacesServer pool)
+    :<|> (postMembershipServer pool :<|> getMembersServer pool))
 
 warpWebServer :: ConnectionPool -> LoggingT IO ()
 warpWebServer pool = LoggingT $
