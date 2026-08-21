@@ -1,11 +1,13 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module WarpApp
   ( warpWebServer
   ) where
 
 import Database.Persist.Sqlite
 import Control.Monad.Logger
-
+import Control.Monad.Reader
 import Network.HTTP.Types.Status
 import Network.Wai
 import Network.Wai.Handler.Warp
@@ -36,13 +38,13 @@ type API = UserAPI :<|> TripAPI :<|> PlaceAPI :<|> MembershipAPI
 warpApplication :: ConnectionPool -> Application
 warpApplication pool =
   simpleCors $
-  provideOptions (Proxy :: Proxy API) $
-  serve
-  (Proxy :: Proxy API)
-  (postUserServer pool
-    :<|> (postTripServer pool :<|> getTripsServer pool :<|> deleteTripServer pool)
-    :<|> (postPlaceServer pool :<|> getPlacesServer pool)
-    :<|> (postMembershipServer pool :<|> getMembersServer pool))
+  provideOptions (Proxy @API) $
+  serveWithContext (Proxy @API) EmptyContext $
+  hoistServerWithContext (Proxy @API) (Proxy @'[]) (flip runReaderT pool) $
+  (postUserServer
+  :<|> (postTripServer :<|> getTripsServer :<|> deleteTripServer)
+  :<|> (postPlaceServer :<|> getPlacesServer)
+  :<|> (postMembershipServer :<|> getMembersServer))
 
 warpWebServer :: ConnectionPool -> LoggingT IO ()
 warpWebServer pool = LoggingT $

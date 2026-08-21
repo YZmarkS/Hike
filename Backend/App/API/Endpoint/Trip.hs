@@ -9,8 +9,10 @@ module API.Endpoint.Trip
   , deleteTripServer
   ) where
 
+import API.Endpoint.Internal
 import Data.String
 import Data.ByteString.Lazy
+import Control.Monad.Reader
 import Control.Monad.IO.Class
 import Database.Persist.Sql
 import Servant
@@ -18,8 +20,9 @@ import Model
 
 type PostTrip = "trip" :> ReqBody '[JSON] Trip :> PostCreated '[JSON] (Key Trip)
 
-postTripServer :: ConnectionPool -> Trip -> Handler (Key Trip)
-postTripServer pool trip = do
+postTripServer :: Trip -> AppM (Key Trip)
+postTripServer trip = do
+  pool <- asks id
   sqlResult <- liftIO $ runSqlPool (insertBy trip) pool
   case sqlResult of
     Left trip' -> let errBody = if tripName trip == tripName (entityVal trip')
@@ -32,14 +35,16 @@ postTripServer pool trip = do
 
 type GetTrips = "trip" :> Get '[JSON] [Entity Trip]
 
-getTripsServer :: ConnectionPool -> Server GetTrips
-getTripsServer pool = do
+getTripsServer :: AppM [Entity Trip]
+getTripsServer = do
+  pool <- asks id
   liftIO $ runSqlPool (selectList [] []) pool
 
 type DeleteTrip = "trip" :> QueryParam' '[Required, Strict] "id" TripId :> Delete '[JSON] String
 
-deleteTripServer :: ConnectionPool -> Server DeleteTrip
-deleteTripServer pool tripId = do
+deleteTripServer :: TripId -> AppM String
+deleteTripServer tripId = do
+  pool <- asks id
   liftIO $ runSqlPool (deleteWhere [TripId ==. tripId]) pool
   return "Deleted"
 

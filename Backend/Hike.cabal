@@ -85,6 +85,7 @@ library Endpoints
                    , API.Endpoint.Trip
                    , API.Endpoint.Membership
                    , API.Endpoint.Place
+                   , API.Endpoint.Internal
 
     other-modules: Model
                  , Model.Enum
@@ -112,6 +113,7 @@ executable Hike
                  , API.Endpoint.User
                  , API.Endpoint.Itinerary
                  , API.Endpoint.Membership
+                 , API.Endpoint.Internal
                  , Model
                  , Model.Enum
                  , WarpApp
@@ -142,6 +144,7 @@ executable JS
                  , API.Endpoint.User
                  , API.Endpoint.Itinerary
                  , API.Endpoint.Membership
+                 , API.Endpoint.Internal
                  , Model
                  , Model.Enum
     

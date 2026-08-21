@@ -7,7 +7,8 @@ module API.Endpoint.Membership
   , getMembersServer
   ) where
 
-import Control.Monad.IO.Class
+import API.Endpoint.Internal
+import Control.Monad.Reader
 import qualified Database.Persist.Sql as P
 import Database.Esqueleto.Experimental
 import Model
@@ -15,8 +16,9 @@ import Servant
 
 type PostMembership = "join" :> ReqBody '[JSON] Membership :> PostCreated '[JSON] MembershipId
 
-postMembershipServer :: ConnectionPool -> Server PostMembership
-postMembershipServer pool membership = do
+postMembershipServer :: Membership -> AppM MembershipId
+postMembershipServer membership = do
+  pool <- asks id
   sqlResult <- liftIO $ runSqlPool (insertUnique membership) pool
   case sqlResult of
     Nothing -> throwError $ err409 { errBody = "Cannot insert due to uniqueness" }
@@ -24,9 +26,10 @@ postMembershipServer pool membership = do
 
 type GetMembers = Capture "trip_id" TripId :> "members" :> Get '[JSON] [Entity User]
 
-getMembersServer :: ConnectionPool -> Server GetMembers
-getMembersServer pool tripId =
-  do { maybeTrip <- liftIO $ P.runSqlPool (get tripId) pool
+getMembersServer :: TripId -> AppM [Entity User]
+getMembersServer tripId =
+  do { pool <- asks id
+     ; maybeTrip <- liftIO $ P.runSqlPool (get tripId) pool
      ; trip <- case maybeTrip of
                  Nothing -> throwError $ err404 { errBody = "Cannot found trip" }
                  Just trip -> return trip
