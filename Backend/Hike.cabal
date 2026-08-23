@@ -30,7 +30,7 @@ common Dependencies
     build-depends: base
                  , bytestring
                  , text
-                 , directory 
+                 , directory
                  , time
                  , base-compat
                  , mtl
@@ -47,6 +47,8 @@ common Dependencies
                  , servant ^>= 0.20.3.0
                  , servant-server
                  , servant-js
+                 , servant-auth
+                 , servant-auth-server
                  , persistent
                  , persistent-sqlite
                  , esqueleto
@@ -61,7 +63,7 @@ library Models
 
     ghc-options: -Wall -threaded -ddump-splices -ddump-tc -ddump-ds-preopt -ddump-to-file
 
-    build-depends: 
+    build-depends:
 
     hs-source-dirs: App
 
@@ -70,9 +72,9 @@ library Models
 
     default-language: GHC2021
 
-library Endpoints    
+library Handlers
     import: Dependencies
-    
+
     ghc-options: -Wall
 
     build-depends: Models
@@ -80,22 +82,39 @@ library Endpoints
     hs-source-dirs: App
 
     exposed-modules: API
-                   , API.Endpoint
-                   , API.Endpoint.User
-                   , API.Endpoint.Trip
-                   , API.Endpoint.Membership
-                   , API.Endpoint.Place
-                   , API.Endpoint.Internal
+                   , API.Handlers
+                   , API.Handlers.User
+                   , API.Handlers.Trip
+                   , API.Handlers.Membership
+                   , API.Handlers.Place
+                   , API.Handlers.Internal
 
     other-modules: Model
                  , Model.Enum
-                 
+
     default-language: GHC2021
-    
+
+library Authentications
+
+    import: Dependencies
+
+    ghc-options: -Wall
+
+    build-depends: Models
+
+    hs-source-dirs: App
+
+    exposed-modules: Auth
+
+    other-modules: Model
+                 , Model.Enum
+
+    default-language: GHC2021
+
 
 executable Hike
     import:           Dependencies
-    
+
     ghc-options: -Wall -threaded
 
     main-is:          Main.hs
@@ -104,29 +123,32 @@ executable Hike
     -- other-extensions:
 
     build-depends: Models
-                 , Endpoints
+                 , Handlers
+                 , Authentications
 
     other-modules: API
-                 , API.Endpoint
-                 , API.Endpoint.Place
-                 , API.Endpoint.Trip
-                 , API.Endpoint.User
-                 , API.Endpoint.Itinerary
-                 , API.Endpoint.Membership
-                 , API.Endpoint.Internal
+                 , API.Handlers
+                 , API.Handlers.Place
+                 , API.Handlers.Trip
+                 , API.Handlers.User
+                 , API.Handlers.Itinerary
+                 , API.Handlers.Membership
+                 , API.Handlers.Internal
+                 , Auth
                  , Model
                  , Model.Enum
                  , WarpApp
+                 , ServantApp
                  , Seed
                  , Config
-    
+
     hs-source-dirs: App
 
     default-language: GHC2021
 
 executable JS
     import:           Dependencies
-    
+
     ghc-options: -Wall -threaded
 
     main-is:          Main.hs
@@ -135,19 +157,19 @@ executable JS
     -- other-extensions:
 
     build-depends: Models
-                 , Endpoints
+                 , Handlers
 
     other-modules: API
-                 , API.Endpoint
-                 , API.Endpoint.Place
-                 , API.Endpoint.Trip
-                 , API.Endpoint.User
-                 , API.Endpoint.Itinerary
-                 , API.Endpoint.Membership
-                 , API.Endpoint.Internal
+                 , API.Handlers
+                 , API.Handlers.Place
+                 , API.Handlers.Trip
+                 , API.Handlers.User
+                 , API.Handlers.Itinerary
+                 , API.Handlers.Membership
+                 , API.Handlers.Internal
                  , Model
                  , Model.Enum
-    
+
     hs-source-dirs: JS
                   , App
 

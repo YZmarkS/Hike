@@ -1,12 +1,12 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module API.Endpoint.User
+module API.Handlers.User
   ( UserAPI
   , postUserServer
   ) where
 
-import API.Endpoint.Internal
+import API.Handlers.Internal
 import Control.Monad.IO.Class
 import Control.Monad.Reader
 import Database.Persist.Sql

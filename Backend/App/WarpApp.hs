@@ -12,6 +12,10 @@ import Network.HTTP.Types.Status
 import Network.Wai
 import Network.Wai.Handler.Warp
 import API
+import API.Handlers.Trip
+import API.Handlers.User
+import API.Handlers.Place
+import API.Handlers.Membership
 import Servant
 
 -- The following packages are useful for dev, but think about them when deploy
@@ -33,14 +37,14 @@ warpSetting logFunc =
   setLogger (monadLoggerToWarpLogger logFunc) $
   setPort 8081 defaultSettings
 
-type API = UserAPI :<|> TripAPI :<|> PlaceAPI :<|> MembershipAPI
+type MyAPI = UserAPI :<|> TripAPI :<|> PlaceAPI :<|> MembershipAPI
 
 warpApplication :: ConnectionPool -> Application
 warpApplication pool =
   simpleCors $
-  provideOptions (Proxy @API) $
-  serveWithContext (Proxy @API) EmptyContext $
-  hoistServerWithContext (Proxy @API) (Proxy @'[]) (flip runReaderT pool) $
+  provideOptions (Proxy @MyAPI) $
+  serveWithContext (Proxy @MyAPI) EmptyContext $
+  hoistServerWithContext (Proxy @MyAPI) (Proxy @'[]) (flip runReaderT pool) $
   (postUserServer
   :<|> (postTripServer :<|> getTripsServer :<|> deleteTripServer)
   :<|> (postPlaceServer :<|> getPlacesServer)
