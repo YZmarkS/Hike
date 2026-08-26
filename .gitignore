@@ -1,0 +1,7 @@
+# emacs
+*~
+\#*\#
+auto/
+
+# emacs org roam
+org-roam.db
