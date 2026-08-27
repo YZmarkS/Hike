@@ -13,34 +13,26 @@ import Servant.Server.Generic
 import Model
 
 
+handler :: API (AsServerT AppM)
+handler =
+    API { user = postUserServer
+        , trip = \authUser -> tripHandler authUser
+        }
 
-tripMemberResourceHandler :: TripMemberResourceAPI (AsServerT AppM)
-tripMemberResourceHandler = TripMemberResourceAPI {}
-
-tripCollectionHandler :: UserId -> TripCollectionAPI (AsServerT AppM)
-tripCollectionHandler userId =
-    TripCollectionAPI { getTrips = getTripsServer
-                      -- , postTrip = postTripServer userId
-                      }
-
-tripsHandler :: ConnectionPool -> UserId -> TripsAPI (AsServerT AppM)
-tripsHandler pool userId =
-    TripsAPI { tripCollection = tripCollectionHandler userId
-             , tripOwnerResource = const tripOwnerFailHandler
-             -- , tripOwnerResource = \tripId -> do
-             --     { maybeTrip <- runSqlPool (get tripId) pool
-             --     ; trip <- case maybeTrip of
-             --                 Nothing -> throwError err401
-             --                 Just trip -> return trip
-             --     ; when (userId /= tripOwnerId trip) (throwError err401)
-             --     ; return $ tripOwnerResourceHandler tripId }
-             -- , tripMemberResource = const tripMemberResourceHandler
+tripHandler :: AuthenticatedUser -> TripsAPI (AsServerT AppM)
+tripHandler authUser =
+    TripsAPI { tripCollection = tripCollectionHandler authUser
+             , tripOwnerResource = tripOwnerResourceHandler authUser
              }
 
-tripOwnerFailHandler :: TripOwnerResourceAPI (AsServerT AppM)
-tripOwnerFailHandler =
-    TripOwnerResourceAPI { deleteTrip = throwError err403 }
+tripCollectionHandler :: AuthenticatedUser -> TripCollectionAPI (AsServerT AppM)
+tripCollectionHandler authUser =
+    TripCollectionAPI { postTrip = postTripServer authUser
+                      , getUserTrips = getUserTripsServer authUser
+                      , getAllTrips = getAllTripsServer
+                      }
 
-tripOwnerResourceHandler :: TripId -> TripOwnerResourceAPI (AsServerT AppM)
-tripOwnerResourceHandler tripId =
-    TripOwnerResourceAPI { deleteTrip = deleteTripServer tripId }
+
+tripOwnerResourceHandler :: AuthenticatedUser -> TripId -> TripOwnerResourceAPI (AsServerT AppM)
+tripOwnerResourceHandler authUser tripId =
+    TripOwnerResourceAPI { deleteTrip = deleteTripServer authUser tripId }
