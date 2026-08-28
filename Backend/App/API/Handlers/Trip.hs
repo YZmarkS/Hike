@@ -5,8 +5,8 @@
 module API.Handlers.Trip
   ( TripAPI
   , postTripServer
-  , getTripsServer
-  , getTripsByUserServer
+  , getAllTripsServer
+  , getUserTripsServer
   , deleteTripServer
   ) where
 
@@ -23,16 +23,19 @@ import Model
 
 userInTrip :: AuthenticatedUser -> TripId -> AppM Bool
 userInTrip (AuthenticatedUser { userId }) tripId = do
-  { memberships <- liftIO $ runSqlPool (selectList [ MembershipUserId ==. userId
-                                                   , MembershipTripId ==. tripId ] []) pool
-  ; return not (null records) }
+  { pool <- asks id
+  ; memberships :: [Entity Membership] <- liftIO $ P.runSqlPool (P.selectList
+                                                                      [ MembershipUserId P.==. userId
+                                                                      , MembershipTripId P.==. tripId ] []) pool
+  ; return $ not (Prelude.null memberships) }
 
 userIsTripOwner :: AuthenticatedUser -> TripId -> AppM Bool
 userIsTripOwner (AuthenticatedUser { userId }) tripId = do
-  { tripResult <- liftIO $ runSqlPool (get tripId) pool
+  { pool <- asks id
+  ; tripResult <- liftIO $ runSqlPool (get tripId) pool
   ; case tripResult of
       Nothing -> return False
-      Just trip -> return tripOwnerId trip == userId }
+      Just trip -> return $ tripOwnerId trip == userId }
 
 postTripServer :: AuthenticatedUser -> Trip -> AppM TripId
 postTripServer (AuthenticatedUser { userId }) trip = do
@@ -49,13 +52,13 @@ postTripServer (AuthenticatedUser { userId }) trip = do
                 Right newTripId -> return newTripId
   ; insertMembershipResult <- liftIO $ runSqlPool (P.insertBy $ Membership userId tripId) pool
   ; case insertMembershipResult of
-      Left membership' -> throwError err500
-      Right membershipId -> return tripId }
+      Left _ -> throwError err500
+      Right _ -> return tripId }
 
 getAllTripsServer :: AppM [Entity Trip]
 getAllTripsServer = do
   { pool <- asks id
-  ; liftIO $ runSqlPool (selectList [] []) pool }
+  ; liftIO $ runSqlPool (P.selectList [] []) pool }
 
 getUserTripsServer :: UserId -> AppM [Entity Trip]
 getUserTripsServer userId = do
@@ -64,7 +67,7 @@ getUserTripsServer userId = do
                                 { (membership :& trip) <-
                                       from $ table @Membership `InnerJoin` table @Trip
                                                `on` \(membership :& trip) -> membership ^. MembershipTripId ==. trip ^. TripId
-                                ; where_ (membership ^. MembershipUserId ==. userId)
+                                ; where_ (membership ^. MembershipUserId ==. val userId)
                                 ; return trip }
                             } ) pool
   }
@@ -73,9 +76,9 @@ deleteTripServer :: AuthenticatedUser -> TripId -> AppM String
 deleteTripServer authUser tripId = do
   { pool <- asks id
   ; userIsTripOwner <- userIsTripOwner authUser tripId
-  ; if userInTrip
+  ; if userIsTripOwner
     then throwError $ err403 { errBody = "You are not the trip owner" }
-    else liftIO $ runSqlPool (deleteWhere [TripId ==. tripId]) pool
+    else liftIO $ runSqlPool (deleteWhere [TripId P.==. tripId]) pool
   ; return "Deleted" }
 
 

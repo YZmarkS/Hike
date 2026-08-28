@@ -16,7 +16,7 @@ import Servant.Auth.Server as SAS
 
 data API mode = API
     { user :: mode :- "user" :> ReqBody '[JSON] User :> PostCreated '[JSON] (Entity User)
-    , trip :: mode :- Auth '[SA.BasicAuth] AuthenticatedUser :> "trip" :> NamedRoutes TripsAPI
+    , trip :: mode :- Auth '[SA.BasicAuth] AuthenticatedUser :> "trip" :> NamedRoutes API.TripAPI
     } deriving (Generic)
 
 data TripAPI mode = TripAPI

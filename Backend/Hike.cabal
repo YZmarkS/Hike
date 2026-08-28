@@ -88,6 +88,7 @@ library Handlers
                    , API.Handlers.Membership
                    , API.Handlers.Place
                    , API.Handlers.Internal
+                   , Auth
 
     other-modules: Model
                  , Model.Enum

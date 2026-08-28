@@ -32,7 +32,6 @@ tripCollectionHandler authUser =
                       , getAllTrips = getAllTripsServer
                       }
 
-
 tripOwnerResourceHandler :: AuthenticatedUser -> TripId -> TripOwnerResourceAPI (AsServerT AppM)
 tripOwnerResourceHandler authUser tripId =
     TripOwnerResourceAPI { deleteTrip = deleteTripServer authUser tripId }
