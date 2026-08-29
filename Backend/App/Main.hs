@@ -7,7 +7,7 @@ import Control.Monad.Logger
 import Database.Persist.Sqlite
 import Seed
 import System.Directory
-import WarpApp
+import ServantApp
 
 main :: IO ()
 main = do
@@ -15,4 +15,4 @@ main = do
   deleteDBFile absoluteDBPath
   seed
   runStderrLoggingT $
-    withSqlitePoolInfo sqliteConnInfo 10 warpWebServer
+    withSqlitePoolInfo sqliteConnInfo 10 application

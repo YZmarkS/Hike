@@ -72,29 +72,6 @@ library Models
 
     default-language: GHC2021
 
-library Handlers
-    import: Dependencies
-
-    ghc-options: -Wall
-
-    build-depends: Models
-
-    hs-source-dirs: App
-
-    exposed-modules: API
-                   , API.Handlers
-                   , API.Handlers.User
-                   , API.Handlers.Trip
-                   , API.Handlers.Membership
-                   , API.Handlers.Place
-                   , API.Handlers.Internal
-                   , Auth
-
-    other-modules: Model
-                 , Model.Enum
-
-    default-language: GHC2021
-
 library Authentications
 
     import: Dependencies
@@ -112,6 +89,28 @@ library Authentications
 
     default-language: GHC2021
 
+library Handlers
+    import: Dependencies
+
+    ghc-options: -Wall
+
+    build-depends: Models, Authentications
+
+    hs-source-dirs: App
+
+    exposed-modules: API
+                   , API.Handlers
+                   , API.Handlers.User
+                   , API.Handlers.Trip
+                   , API.Handlers.Membership
+                   , API.Handlers.Place
+                   , API.Handlers.Internal
+                   , Auth
+
+    other-modules: Model
+                 , Model.Enum
+
+    default-language: GHC2021
 
 executable Hike
     import:           Dependencies

@@ -6,13 +6,11 @@
 module API where
 
 import GHC.Generics
-import API.Handlers
 import Auth
 import Model
 import Database.Persist
 import Servant
 import Servant.Auth as SA
-import Servant.Auth.Server as SAS
 
 data API mode = API
     { user :: mode :- "user" :> ReqBody '[JSON] User :> PostCreated '[JSON] (Entity User)

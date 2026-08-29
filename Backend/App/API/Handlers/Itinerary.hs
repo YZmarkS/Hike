@@ -3,11 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-module API.Handlers.Itinerary
-  (
-  ) where
+module API.Handlers.Itinerary where
 
-import API.Handlers
 import Model
 import Servant
 

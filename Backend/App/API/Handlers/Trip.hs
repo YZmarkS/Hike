@@ -2,20 +2,13 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module API.Handlers.Trip
-  ( TripAPI
-  , postTripServer
-  , getAllTripsServer
-  , getUserTripsServer
-  , deleteTripServer
-  ) where
+module API.Handlers.Trip where
 
 import API.Handlers.Internal
 import Auth
 import Data.String
 import Data.ByteString.Lazy
 import Control.Monad.Reader
-import Control.Monad.IO.Class
 import qualified Database.Persist.Sql as P
 import Database.Esqueleto.Experimental
 import Servant
@@ -60,8 +53,8 @@ getAllTripsServer = do
   { pool <- asks id
   ; liftIO $ runSqlPool (P.selectList [] []) pool }
 
-getUserTripsServer :: UserId -> AppM [Entity Trip]
-getUserTripsServer userId = do
+getUserTripsServer :: AuthenticatedUser -> AppM [Entity Trip]
+getUserTripsServer (AuthenticatedUser { userId }) = do
   { pool <- asks id
   ; liftIO $ runSqlPool (do { select $ do
                                 { (membership :& trip) <-
@@ -84,7 +77,7 @@ deleteTripServer authUser tripId = do
 
 
 
-type PostTrip = "trip" :> ReqBody '[JSON] Trip :> PostCreated '[JSON] TripId
-type GetTrips = "trip" :> Get '[JSON] [Entity Trip]
-type DeleteTrip = "trip" :> QueryParam' '[Required, Strict] "id" TripId :> Delete '[JSON] String
-type TripAPI = PostTrip :<|> GetTrips :<|> DeleteTrip
+-- type PostTrip = "trip" :> ReqBody '[JSON] Trip :> PostCreated '[JSON] TripId
+-- type GetTrips = "trip" :> Get '[JSON] [Entity Trip]
+-- type DeleteTrip = "trip" :> QueryParam' '[Required, Strict] "id" TripId :> Delete '[JSON] String
+-- type TripAPI = PostTrip :<|> GetTrips :<|> DeleteTrip
