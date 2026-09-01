@@ -49,6 +49,7 @@ common Dependencies
                  , servant-js
                  , servant-auth
                  , servant-auth-server
+                 , servant-foreign
                  , persistent
                  , persistent-sqlite
                  , esqueleto
@@ -86,6 +87,7 @@ library Authentications
 
     other-modules: Model
                  , Model.Enum
+                 , API.Handlers.Internal
 
     default-language: GHC2021
 

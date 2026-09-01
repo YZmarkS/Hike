@@ -12,27 +12,37 @@ import Control.Monad.Reader
 import qualified Database.Persist.Sql as P
 import Database.Esqueleto.Experimental
 import Servant
+import Servant.Auth.Server as SAS
 import Model
 
-userInTrip :: AuthenticatedUser -> TripId -> AppM Bool
-userInTrip (AuthenticatedUser { userId }) tripId = do
-  { pool <- asks id
-  ; memberships :: [Entity Membership] <- liftIO $ P.runSqlPool (P.selectList
-                                                                      [ MembershipUserId P.==. userId
-                                                                      , MembershipTripId P.==. tripId ] []) pool
-  ; return $ not (Prelude.null memberships) }
 
-userIsTripOwner :: AuthenticatedUser -> TripId -> AppM Bool
-userIsTripOwner (AuthenticatedUser { userId }) tripId = do
-  { pool <- asks id
+userInTrip :: AuthUserId -> TripId -> AppM UserId
+userInTrip authUserId tripId = do
+  { userId <- extractUserId authUserId
+  ; pool <- asks id
+  ; maybeMembership <- liftIO $ P.runSqlPool
+                       (P.getBy (UniqueUserInTrip userId tripId))
+                       pool
+
+  ; case maybeMembership of
+      Nothing -> throwError err403
+      Just membership -> return $ membershipUserId $ entityVal membership }
+userInTrip _ _ = throwError err401
+
+userIsTripOwner :: AuthUserId -> TripId -> AppM Bool
+userIsTripOwner authUserId tripId = do
+  { userId <- extractUserId authUserId
+  ; pool <- asks id
   ; tripResult <- liftIO $ runSqlPool (get tripId) pool
   ; case tripResult of
-      Nothing -> return False
+      Nothing -> throwError err401
       Just trip -> return $ tripOwnerId trip == userId }
+userIsTripOwner _ _ = throwError err401
 
-postTripServer :: AuthenticatedUser -> Trip -> AppM TripId
-postTripServer (AuthenticatedUser { userId }) trip = do
-  { pool <- asks id
+postTripServer :: AuthUserId -> Trip -> AppM TripId
+postTripServer authUserId trip = do
+  { userId <- extractUserId authUserId
+  ; pool <- asks id
   ; let canonicalTrip = trip { tripOwnerId = userId }
   ; insertTripResult <- liftIO $ runSqlPool (P.insertBy canonicalTrip) pool
   ; tripId <- case insertTripResult of
@@ -53,9 +63,10 @@ getAllTripsServer = do
   { pool <- asks id
   ; liftIO $ runSqlPool (P.selectList [] []) pool }
 
-getUserTripsServer :: AuthenticatedUser -> AppM [Entity Trip]
-getUserTripsServer (AuthenticatedUser { userId }) = do
-  { pool <- asks id
+getUserTripsServer :: AuthUserId -> AppM [Entity Trip]
+getUserTripsServer authUserId = do
+  { userId <- extractUserId authUserId
+  ; pool <- asks id
   ; liftIO $ runSqlPool (do { select $ do
                                 { (membership :& trip) <-
                                       from $ table @Membership `InnerJoin` table @Trip
@@ -65,13 +76,16 @@ getUserTripsServer (AuthenticatedUser { userId }) = do
                             } ) pool
   }
 
-deleteTripServer :: AuthenticatedUser -> TripId -> AppM String
-deleteTripServer authUser tripId = do
-  { pool <- asks id
-  ; userIsTripOwner <- userIsTripOwner authUser tripId
+deleteTripServer :: AuthUserId -> TripId -> AppM String
+deleteTripServer authUserId tripId = do
+  { userId <- extractUserId authUserId
+  ; liftIO $ print userId
+  ; pool <- asks id
+  ; userIsTripOwner <- userIsTripOwner authUserId tripId
+  ; liftIO $ print userIsTripOwner
   ; if userIsTripOwner
-    then throwError $ err403 { errBody = "You are not the trip owner" }
-    else liftIO $ runSqlPool (deleteWhere [TripId P.==. tripId]) pool
+    then liftIO $ runSqlPool (deleteWhere [TripId P.==. tripId]) pool
+    else throwError $ err403 { errBody = "You are not the trip owner" }
   ; return "Deleted" }
 
 

@@ -73,7 +73,7 @@ Leg json
 
 Membership json
     userId UserId
-    tripId TripId
+    tripId TripId OnDeleteCascade
     UniqueUserInTrip userId tripId
     deriving Eq Show
 

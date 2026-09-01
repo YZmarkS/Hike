@@ -10,8 +10,6 @@ import Database.Persist.Sql
 import Model
 import Servant
 
-type PostUser = "user" :> ReqBody '[JSON] User :> PostCreated '[JSON] (Entity User)
-
 postUserServer :: User -> AppM (Entity User)
 postUserServer user = do
   { pool <- asks id
@@ -20,4 +18,7 @@ postUserServer user = do
       Nothing -> throwError $ err409 { errBody = "Cannot insert due to uniqueness" }
       Just newUserId -> return newUserId }
 
-type UserAPI = PostUser
+getAllUsersServer :: AppM [Entity User]
+getAllUsersServer = do
+  { pool <- asks id
+  ; liftIO $ runSqlPool (selectList [] []) pool }

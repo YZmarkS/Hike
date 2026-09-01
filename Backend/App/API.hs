@@ -6,16 +6,20 @@
 module API where
 
 import GHC.Generics
-import Auth
 import Model
 import Database.Persist
 import Servant
 import Servant.Auth as SA
 
 data API mode = API
-    { user :: mode :- "user" :> ReqBody '[JSON] User :> PostCreated '[JSON] (Entity User)
-    , trip :: mode :- Auth '[SA.BasicAuth] AuthenticatedUser :> "trip" :> NamedRoutes API.TripAPI
+    { user :: mode :- "user" :> NamedRoutes UserAPI
+    , trip :: mode :- Auth '[SA.BasicAuth] UserId :> NamedRoutes API.TripAPI
     } deriving (Generic)
+
+data UserAPI mode = UserAPI
+    { postUser :: mode :- ReqBody '[JSON] User :> PostCreated '[JSON] (Entity User)
+    , getAllUsers :: mode :- Get '[JSON] [Entity User]
+    } deriving Generic
 
 data TripAPI mode = TripAPI
     { tripCollection :: mode :- "trips" :> NamedRoutes TripCollectionAPI
