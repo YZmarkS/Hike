@@ -1,33 +1,28 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module API.Handlers.Membership
-  ( MembershipAPI
-  , postMembershipServer
-  , getMembersServer
-  ) where
+module API.Handlers.Membership where
 
+import Auth
 import API.Handlers.Internal
+import API.Handlers.Internal.Auth
 import Control.Monad.Reader
 import qualified Database.Persist.Sql as P
 import Database.Esqueleto.Experimental
 import Model
 import Servant
 
-type PostMembership = "join" :> ReqBody '[JSON] Membership :> PostCreated '[JSON] MembershipId
+postNewMembershipServer :: HikeAuthResult -> TripId -> UserId -> AppM MembershipId
+postNewMembershipServer hikeAuthResult tripId newUserId = do
+  { userId <- extractUserId hikeAuthResult
+  ; pool <- asks id
+  ; maybeInsert <- liftIO $ runSqlPool (insertUnique $ Membership newUserId tripId) pool
+  ; case maybeInsert of
+      Nothing -> throwError $ err409 { errBody = "Invalid membership" }
+      Just newMembershipId -> return newMembershipId }
 
-postMembershipServer :: Membership -> AppM MembershipId
-postMembershipServer membership = do
-  pool <- asks id
-  sqlResult <- liftIO $ runSqlPool (insertUnique membership) pool
-  case sqlResult of
-    Nothing -> throwError $ err409 { errBody = "Cannot insert due to uniqueness" }
-    Just newMembershipId -> return newMembershipId
-
-type GetMembers = Capture "trip_id" TripId :> "members" :> Get '[JSON] [Entity User]
-
-getMembersServer :: TripId -> AppM [Entity User]
-getMembersServer tripId =
+getTripMembersServer :: HikeAuthResult -> TripId -> AppM [Entity User]
+getTripMembersServer hikeAuthResult tripId =
     do { pool <- asks id
        ; maybeTrip <- liftIO $ P.runSqlPool (get tripId) pool
        ; trip <- case maybeTrip of
@@ -52,4 +47,4 @@ getMembersServer tripId =
 
 -- type DeleteMembership = Capture "trip_id" TripId :> "members
 
-type MembershipAPI = PostMembership :<|> GetMembers
+-- type MembershipAPI = PostMembership :<|> GetMembers

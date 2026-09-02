@@ -1,14 +1,9 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Auth where
 
-import API.Handlers.Internal
-import Data.Aeson
 import Data.Text.Encoding
-import GHC.Generics
 import Database.Persist.Sql
 import Model
 import Servant.Foreign
@@ -27,14 +22,14 @@ import Control.Monad.IO.Class (liftIO)
 -- instance FromBasicAuthData AuthenticatedUser where
 --     fromBasicAuthData authData authCheckFunction = authCheckFunction authData
 
-type AuthUserId = AuthResult UserId
+type HikeAuthResult = AuthResult UserId
 
 instance ToJWT UserId
 instance FromJWT UserId
 
-type instance BasicAuthCfg = BasicAuthData -> IO AuthUserId
+type instance BasicAuthCfg = BasicAuthData -> IO HikeAuthResult
 
-authCheck :: ConnectionPool -> BasicAuthData -> IO AuthUserId
+authCheck :: ConnectionPool -> BasicAuthData -> IO HikeAuthResult
 authCheck pool (BasicAuthData username _) =
     do { candidates <- liftIO $
                        runSqlPool
@@ -47,11 +42,6 @@ authCheck pool (BasicAuthData username _) =
 
 instance FromBasicAuthData UserId where
     fromBasicAuthData authData authCheckFunction = authCheckFunction authData
-
-extractUserId :: AuthUserId -> AppM UserId
-extractUserId (Authenticated userId) = return userId
-extractUserId _ = throwError $ err401 { errBody = "Did not find user with same username" }
-
 
 
 -- Known integration issue between servant-options and authentication:

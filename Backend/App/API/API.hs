@@ -34,8 +34,8 @@ data TripCollectionAPI mode = TripCollectionAPI
 
 data TripOwnerResourceAPI mode = TripOwnerResourceAPI
     { deleteTrip :: mode :- Delete '[JSON] String
+    -- , postNewMembership :: mode :- ReqBody '[JSON] UserId :> PostCreated '[JSON] MembershipId
     } deriving (Generic)
-
 
 -- data TripMemberResourceAPI mode = TripMemberResourceAPI
 --     { allMembers :: mode :- "all_members" :> Get '[JSON] [Entity User]

@@ -4,15 +4,10 @@ module ServantApp where
 
 import API
 import API.Handlers
-import API.Handlers.Internal
 import Auth
-import Control.Monad
-import Control.Monad.Logger
 import Control.Monad.Reader
 import Database.Persist.Sql
 import Servant
-import Servant.API
-import Servant.API.NamedRoutes
 import Servant.Auth.Server
 import Servant.Server.Generic
 import Model
@@ -34,22 +29,22 @@ userHandler =
             , getAllUsers = getAllUsersServer
             }
 
-tripHandler :: AuthUserId -> TripAPI (AsServerT AppM)
-tripHandler resultUser =
-    TripAPI { tripCollection = tripCollectionHandler resultUser
-             , tripOwnerResource = tripOwnerResourceHandler resultUser
+tripHandler :: HikeAuthResult -> TripAPI (AsServerT AppM)
+tripHandler hikeAuthResult =
+    TripAPI { tripCollection = tripCollectionHandler hikeAuthResult
+             , tripOwnerResource = tripOwnerResourceHandler hikeAuthResult
              }
 
-tripCollectionHandler :: AuthUserId -> TripCollectionAPI (AsServerT AppM)
-tripCollectionHandler resultUser =
-    TripCollectionAPI { postTrip = postTripServer resultUser
-                      , getUserTrips = getUserTripsServer resultUser
+tripCollectionHandler :: HikeAuthResult -> TripCollectionAPI (AsServerT AppM)
+tripCollectionHandler hikeAuthResult =
+    TripCollectionAPI { postTrip = postTripServer hikeAuthResult
+                      , getUserTrips = getUserTripsServer hikeAuthResult
                       , getAllTrips = getAllTripsServer
                       }
 
-tripOwnerResourceHandler :: AuthUserId -> TripId -> TripOwnerResourceAPI (AsServerT AppM)
-tripOwnerResourceHandler resultUser tripId =
-    TripOwnerResourceAPI { deleteTrip = deleteTripServer resultUser tripId }
+tripOwnerResourceHandler :: HikeAuthResult -> TripId -> TripOwnerResourceAPI (AsServerT AppM)
+tripOwnerResourceHandler hikeAuthResult tripId =
+    TripOwnerResourceAPI { deleteTrip = deleteTripServer hikeAuthResult tripId }
 
 applicationCreation :: ConnectionPool -> IO Application
 applicationCreation pool = do

@@ -33,6 +33,7 @@ common Dependencies
                  , directory
                  , time
                  , base-compat
+                 , exceptions
                  , mtl
                  , aeson
                  , attoparsec
@@ -61,118 +62,65 @@ common Dependencies
 
 library Models
     import: Dependencies
-
     ghc-options: -Wall -threaded -ddump-splices -ddump-tc -ddump-ds-preopt -ddump-to-file
-
     build-depends:
-
-    hs-source-dirs: App
-
+    hs-source-dirs: App/Model
     exposed-modules: Model
                    , Model.Enum
-
     default-language: GHC2021
 
 library Authentications
-
     import: Dependencies
-
     ghc-options: -Wall
-
     build-depends: Models
-
-    hs-source-dirs: App
-
+    hs-source-dirs: App/Auth
     exposed-modules: Auth
-
-    other-modules: Model
-                 , Model.Enum
-                 , API.Handlers.Internal
-
+    other-modules:
     default-language: GHC2021
 
 library Handlers
     import: Dependencies
-
     ghc-options: -Wall
-
-    build-depends: Models, Authentications
-
-    hs-source-dirs: App
-
+    build-depends: Models
+                 , Authentications
+    hs-source-dirs: App/API
     exposed-modules: API
                    , API.Handlers
                    , API.Handlers.User
                    , API.Handlers.Trip
+                   , API.Handlers.Itinerary
                    , API.Handlers.Membership
                    , API.Handlers.Place
                    , API.Handlers.Internal
-                   , Auth
-
-    other-modules: Model
-                 , Model.Enum
-
+                   , API.Handlers.Internal.Auth
+    other-modules:
     default-language: GHC2021
 
 executable Hike
     import:           Dependencies
-
     ghc-options: -Wall -threaded
-
     main-is:          Main.hs
-
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-
     build-depends: Models
                  , Handlers
                  , Authentications
-
-    other-modules: API
-                 , API.Handlers
-                 , API.Handlers.Place
-                 , API.Handlers.Trip
-                 , API.Handlers.User
-                 , API.Handlers.Itinerary
-                 , API.Handlers.Membership
-                 , API.Handlers.Internal
-                 , Auth
-                 , Model
-                 , Model.Enum
-                 , WarpApp
+    other-modules: WarpApp
                  , ServantApp
                  , Seed
                  , Config
-
     hs-source-dirs: App
-
     default-language: GHC2021
 
-executable JS
-    import:           Dependencies
+-- executable JS
+--     import:           Dependencies
+--     ghc-options: -Wall -threaded
+--     main-is:          Main.hs
+--     -- LANGUAGE extensions used by modules in this package.
+--     -- other-extensions:
+--     build-depends: Models
+--                  , Handlers
+--     other-modules: 
+--     hs-source-dirs: JS
 
-    ghc-options: -Wall -threaded
-
-    main-is:          Main.hs
-
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
-
-    build-depends: Models
-                 , Handlers
-
-    other-modules: API
-                 , API.Handlers
-                 , API.Handlers.Place
-                 , API.Handlers.Trip
-                 , API.Handlers.User
-                 , API.Handlers.Itinerary
-                 , API.Handlers.Membership
-                 , API.Handlers.Internal
-                 , Model
-                 , Model.Enum
-
-    hs-source-dirs: JS
-                  , App
-
-    default-language: GHC2021
+--     default-language: GHC2021
