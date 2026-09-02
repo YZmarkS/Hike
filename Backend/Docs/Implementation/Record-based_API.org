@@ -1,0 +1,128 @@
+:PROPERTIES:
+:ID:       396d1e68-723c-47a0-9b6f-04825343bf02
+:END:
+#+TITLE: Record-based API
+
+Record-based API definition provides an alternative way to group APIs than ~:<|>~. Constructing APIs using ~:<|>~ are subjected to order and precedence. When the API is wide / deeply nested, a mistake can lead to difficult to parse error message. Record-based API definition should provide better error messages.
+
+Most of this documentation is adapted from the [[https://docs.servant.dev/en/latest/cookbook/named-routes/NamedRoutes.html][cookbook]] [fn:1]
+
+* General Definition
+
+A collection of APIs with the same root can be defined as follow:
+#+begin_src haskell
+  {-# LANGUAGE DeriveGeneric #-}
+
+  import GHC.Generics
+
+  data API mode = MkAPI                      -- (1)
+      { path1 :: mode :- Get '[JSON] Int     -- (2)
+      , path2 :: mode :- NamedRoutes SubAPI2 -- (3)
+      , ...
+      } deriving (Generic)                   -- (4)
+
+  data SubAPI2 mode = MkSubAPI2
+      { subpath1 :: mode :- SubSubAPI1
+      , subpath2 :: mode :- SubSubAPI2
+      , ...
+      } deriving (Generic)
+#+end_src
+
+** (1) 
+
+Record-based APIs are parametrized over a ~mode~.
+
+*WIP: Need to see more cases of using different modes*
+
+** (2) 
+:PROPERTIES:
+:ID:       23470259-4a2e-428d-8952-25c73f7abe8f
+:END:
+
+The ~(:-)~ operator applies mode to an API. The operator is implemented as [[id:3ac949dc-90c5-4430-a821-d50dde67b09a][associated types]], with behaviour determined by the typeclass ~GenericMode~ parametrized over ~mode~.
+
+One important ~mode~ is ~AsServerT~ defined in [[https://hackage-content.haskell.org/package/servant-server-0.20.3.0/docs/src/Servant.Server.Internal.html#AsServerT][~Servant.Server.Generic~]] [fn:2]:
+#+begin_src haskell
+  data AsServerT (m :: Type -> Type)
+  instance GenericMode (AsServerT m) where
+    type AsServerT m :- api = ServerT api m
+#+end_src
+
+The type ~(API (AsServerT m))~ produces a record type where each label has the type of the handler of its corresponding API. 
+
+** (3)
+
+When nesting record-based API, the ~NamedRoutes~ combinator transforms a record API type into a proper type to be used in API definition.
+
+With the appropriate definition, the mode can be propagated into the record-based subpath. This is done for the ~(AsServerT m)~ mode as shown in the [[https://hackage-content.haskell.org/package/servant-server-0.20.3.0/docs/Servant-Server.html#t:HasServer][source code]] [fn:3]:
+#+begin_src haskell
+  instance ( ... ) => HasServer (NamedRoutes api) context where
+    type ServerT (NamedRoutes api) m = api (AsServerT m)
+#+end_src
+
+** (4)
+
+Record-based API are implemented using generics. Remember to derive generic.
+
+* General Implementation
+
+The handler type for a record-based API can be obtained by applying the API type with the ~(AsServerT m)~ mode.
+
+#+begin_src haskell
+  handler :: API (AsServerT m)
+#+end_src
+
+Recall from [[id:23470259-4a2e-428d-8952-25c73f7abe8f][earlier]], this applies ~(ServerT m)~ to the type of each label. The remaining type calculation is explained in [[id:9680f30f-f25c-400d-a46d-1b11053c9e3a][another piece of documentation]].
+
+#+begin_src haskell
+  path1 :: (AsServerT m) :- Get '[JSON] Int
+         = ServerT m (Get '[JSON] Int)
+         = m Int
+#+end_src
+
+#+begin_src haskell
+  handler = MkAPI { path1 = return 42
+                        , ...
+                        }
+#+end_src
+
+* Serving Record-based API
+
+We can use the ~genericServe~ series of functions to serve an handler implementation as a ~wai~ application.
+
+The logic is similar to the ~serve~ series of functions. In fact, [[https://gist.github.com/yakshaven/6d1a3765e76b144d4c63fcc9e7fc8d53][it is possible to serve record-based APIs using ~serveWithContext~]] [fn:4]. 
+
+* Getting APIs
+
+One case where you will need to get an explicit API is when you need a Proxy. This can be done using the [[https://hackage-content.haskell.org/package/servant-0.20.3.0/docs/Servant-API-Generic.html#v:genericApi][~genericApi~ function]] [fn:5]:
+#+begin_src haskell
+  genericApi :: forall (routes :: Type -> Type). GenericServant routes AsApi => Proxy routes -> Proxy (ToServantApi routes)
+#+end_src
+
+The subtopics is a noncomplete list of usage. There are more type level operations one can use on record-based API.
+
+** ~provideOptions~
+
+[[https://hackage.haskell.org/package/servant-options][~servant-options~]] is a library providing the middleware to handle response to OPTIONS requests. The provided function ~provideOptions~ requires a proxy argument. We can supply it using ~genericApi~.
+
+#+begin_src haskell
+  provideOptions :: (...) => Proxy api -> Middleware
+
+  provideOptions (genericApi (Proxy @RecordAPI))
+#+end_src
+
+However, it is known there are some issue integrating with authentication. A GitHub post provides a solution. *WIP, need to understand*
+
+https://github.com/sordina/servant-options/issues/2
+
+* Footnotes
+
+[fn:1] ~servant~ Cookbook, [[https://docs.servant.dev/en/latest/cookbook/named-routes/NamedRoutes.html][Record-based APIs]]
+
+[fn:2] ~servant-server~ Hackage, [[https://hackage-content.haskell.org/package/servant-server-0.20.3.0/docs/Servant-Server-Generic.html][~Servant.Server.Generic~]]
+
+[fn:3] ~servant-server~ Hackage, [[https://hackage-content.haskell.org/package/servant-server-0.20.3.0/docs/Servant-Server.html#t:HasServer][~HasServer~ instance for ~NamedRoutes~]]
+
+[fn:4] yakshaven's GitHub Gist, [[https://gist.github.com/yakshaven/6d1a3765e76b144d4c63fcc9e7fc8d53][Skeleton of a ~servant~ app with record-based APIss and authentication]].
+
+[fn:5] ~servant~ Hackage, [[https://hackage-content.haskell.org/package/servant-0.20.3.0/docs/Servant-API-Generic.html#v:genericApi][genericApi]]

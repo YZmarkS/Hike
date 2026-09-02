@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module ServantApp where
 
@@ -12,6 +11,7 @@ import Control.Monad.Logger
 import Control.Monad.Reader
 import Database.Persist.Sql
 import Servant
+import Servant.API
 import Servant.API.NamedRoutes
 import Servant.Auth.Server
 import Servant.Server.Generic
@@ -51,8 +51,6 @@ tripOwnerResourceHandler :: AuthUserId -> TripId -> TripOwnerResourceAPI (AsServ
 tripOwnerResourceHandler resultUser tripId =
     TripOwnerResourceAPI { deleteTrip = deleteTripServer resultUser tripId }
 
-type AllAPI = NamedRoutes API
-
 applicationCreation :: ConnectionPool -> IO Application
 applicationCreation pool = do
   { jwtSigningKey <- generateKey
@@ -61,8 +59,8 @@ applicationCreation pool = do
         context = jwtConfig :. defaultCookieSettings :. authConfig :. EmptyContext
   ; return $
     simpleCors $
-    provideOptions (Proxy @AllAPI) $
-               genericServeTWithContext
-               (flip runReaderT pool)
-               handler
-               context }
+    provideOptions (genericApi (Proxy @API)) $
+    genericServeTWithContext
+    (flip runReaderT pool)
+    handler
+    context }

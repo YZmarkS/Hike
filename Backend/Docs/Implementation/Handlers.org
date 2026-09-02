@@ -1,0 +1,111 @@
+#+TITLE: Handlers
+
+* Basic
+
+In ~servant~, APIs are declared as types. Still, for each API endpoint, there needs to be an expression that handles the http call coming to the endpoint.
+
+In [[id:9680f30f-f25c-400d-a46d-1b11053c9e3a][the documentation about the ~Server~ type]], we have seen how the ~Server~ type-level function transform an API into a type that we can assign value to. The value we assign is the contains the actual logic of handling an incoming request
+
+* Simple Example
+
+The simplest type for a handler to have is ~(Handler r)~, it is the type of a handler that will handle an endpoint that is expected to return a value of type ~r~.
+
+#+begin_src haskell
+  handler :: Handler Int
+  handler = return 42
+#+end_src
+
+~Handler~ is a monad that is isomorphic to ~(ExceptT ServerError IO)~. The type gives us 3 capabilities:
+1. ~return~ to return the response to the client.
+2. ~throwError~ to return an error code to the client.
+3. ~liftIO~ to perform IO actions when preparing the response [fn:1].
+
+* Inputs to Handlers
+
+There are many possible inputs to a handler: path parametre, query parametre, HTTP headers... These are represented as ~QueryParams~, ~Capture~, and ~Header~ combinators in ~servant~.
+
+~Server~ and ~ServerT~ convert these combinators function arguments. In general, each non-verb combinator get converted into one argument, and the order is preserved.
+
+#+begin_src haskell
+  type CostAPI = Capture "cart_id" Int :> Header "user" Text :> Get '[JSON] Double
+
+  Server CostAPI = Int -> Text -> Handler Double
+
+  costHandler :: Int -> Text -> Handler Double -- or (Server CostAPI)
+  costHandler cartId username = do { total <- businessLogic
+                                   ; return total }
+#+end_src
+
+* Serving APIs
+
+To combine the APIs and the implements together, we use the ~serve~ series of functions from ~Servant.Server~ [fn:2]
+
+#+begin_src haskell
+  serve :: ... => Proxy api -> Server api -> Application
+
+  application :: Application
+  application = serve (Proxy :: Proxy CostAPI) costHandler                 
+#+end_src
+
+We can combine APIs and handers using the ~:<|>~ combinator. Alternatively we can use [[id:396d1e68-723c-47a0-9b6f-04825343bf02][record-based API]] which is explained in a different place. 
+
+* Performing IO Actions: An Example Using Database
+
+We can provide the handler function with additional argument to give it resources from the outside. Suppose our application need access to database, with the following function used for querying:
+
+#+begin_src haskell
+  calcTotal :: ConnectionPool -> IO Double -- IO to indicate effectful computation
+#+end_src
+
+We can design the handler to use the query function as follow
+
+#+begin_src haskell
+  type TotalCostAPI = Get '[JSON] Double
+
+  totalCostHandler :: ConnectionPool -> Handler Double
+  totalCostHandler pool = do
+    { total <- liftIO $       -- (2) lift into correct monad
+               calcTotal pool -- (1) Call query function
+    ; return total }          -- (3) return result
+#+end_src
+
+Then, simply pass the connection pool to the handler when constructing the application. This also means the application is likely parametrized over connection pool:
+
+#+begin_src haskell
+  createApp :: ConnectionPool -> Application
+  createApp pool = serve (Proxy :: Proxy TotalCostAPI) (totalCostHandler pool)
+#+end_src
+
+* Using Other Monads: An Example Using ReaderT
+
+When the app gets complicated, passing external resources into each handler can be very tedious. One may consider using ~ReaderT~ to provide handler with a context to run in.
+
+#+begin_src haskell
+  type TotalCostAPI = Get '[JSON] Double
+
+  -- A handler that has access to 
+  totalCostHandler :: (ReaderT ConnectionPool) Handler Double
+#+end_src
+
+We cannot use ~serve~ here because the type of ~totalCostHandler~ does not match ~(Server TotalCostAPI) = (Handler Double)~.
+
+It is clear we can convert ~totalCostHandler~ into a value of type ~(Handler Double)~ by simply running the the ~ReaderT~ monad. And we can run it using the ~hoistServer~ series of function:
+
+#+begin_src haskell
+  hoistServer :: ...
+    => Proxy api
+    -> (forall x . m x -> n x)
+    -> ServerT api m -> ServerT api n
+
+  hoistedHandler :: ConnectionPool -> Handler Double
+  hoistedHandler pool = hoistServer (Proxy) (flip runReaderT pool) totalCostHandler
+
+  createApp :: ConnectionPool -> Application
+  createApp pool = serve (Proxy) (hoistedHandler pool)
+#+end_src
+
+* Footnotes
+
+[fn:2] ~servant-server~ Hackage, ~Servant.Server~ 
+
+[fn:1] ~servant~ tutorial, [[https://docs.servant.dev/en/latest/tutorial/Server.html#the-handler-monad][The ~Handler~ monad]] 

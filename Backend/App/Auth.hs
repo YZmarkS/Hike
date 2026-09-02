@@ -53,6 +53,9 @@ extractUserId (Authenticated userId) = return userId
 extractUserId _ = throwError $ err401 { errBody = "Did not find user with same username" }
 
 
+
+-- Known integration issue between servant-options and authentication:
+-- https://github.com/sordina/servant-options/issues/2
 instance (HasForeign lang ftype api) =>
   HasForeign lang ftype (Auth k a :> api) where
 

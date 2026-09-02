@@ -1,7 +1,10 @@
+:PROPERTIES:
+:ID:       9680f30f-f25c-400d-a46d-1b11053c9e3a
+:END:
 #+TITLE: The ~Server~ Type
 #+BIBLIOGRAPHY: "../Ref.bib"
 
-In this documentation, we explain the details of the ~Server~ type.
+The ~Server~ type is type constructor provided by the ~servant~ library. It is used pervasively through out the tutorial and cookbook. In this documentation, we dive into the details of the ~Server~ type.
 
 * Motivating Example
 
@@ -14,13 +17,19 @@ Consider the following snippet, adapted from the ~servant~ tutorial [fn:1].
   myServer = return 42
 #+end_src
 
-To a first timer, this implementation may appears to contain inconsistencies:
-- You might find the type of ~(return 42)~ to be ~(Handler Int)~. Which is not syntactically the same as ~(Server MyAPI)~.
-- The tutorial [fn:1] also says "for each endpoint, your handlers will by default run in the ~Handler~ monad". So where is the ~Handler~ monad in the type annotation of the handler?
+Depending on how the LSP chooses to resolve types, one may found the type of ~(return 42)~ to be ~(Handler Int)~. This is not syntactically the same as the ~(Server MyAPI)~ type annotation. Furthermore, tutorial [fn:1] also says "for each endpoint, your handlers will by default run in the ~Handler~ monad".
+
+This results in the following question:
+#+begin_quote
+How can a computation in the ~Handler~ monad be typechecked against a ~Server~ type?
+#+end_quote
 
 We resolve the apparent inconsistency in the following documentation.
 
 * Type Families and Associated Data Types
+:PROPERTIES:
+:ID:       3ac949dc-90c5-4430-a821-d50dde67b09a
+:END:
 
 #+begin_center
 tl;dr: ~Server~ is a type level function, and ~(Server MyAPI)~ evaluates to ~(Handler Int)~
@@ -36,45 +45,35 @@ In the ~servant~ source code [fn:2], you can find the following class definition
   type Server api = ServerT api Handler
 #+end_src
 
-This is an example of /Type Families/ in Haskell [fn:3], in particular, this is an example of /Associated Data Types/ [cite:@10.1145/1047659.1040306].
+** ~ServerT~
 
-~ServerT~ is a /type level function/, meaning it takes some types as arguments, and returns a type as the output. The definition of which depends on the specific implementation of the ~HasServer~ instance.
+~ServerT~ is an example of /Type Families/ in Haskell [fn:3], in particular, it is an example of /Associated Data Types/ [cite:@10.1145/1047659.1040306].
+
+~ServerT~ is a /type level function/. It takes types as arguments, and returns a type as the output. Recall APIs are represented as types, and different APIs may satisfy the ~HasServer~ constraint in different ways. Consequently, ~ServerT~ will behave differently on different APIs. 
+
+** ~Server~
 
 The last line states ~(Server api)~ is a /type synonym/ [fn:4]. Thus the ~(Server MyAPI)~ becomes ~(ServerT MyAPI Handler)~, which becomes ~(ServerT (Get '[JSON] Int) Handler)~ by synonym again.
 
-** Example: ~QueryParam~
+* Resolving Motivating Example:
 
-In ~servant~, API are represented as types, and constructed using type constructors (or "combinators"). Two such constructors are:
-- ~QueryParam~ :: Represents an API with a query string parameter, and
-- ~:>~ :: Sequencing combinators.
+We return to the motivating example
 
-With that knowledge, consider the following ~HasServer~ instance from the ~servant~ source code:
+** Resolving ~MyAPI~ to normal form.
 
-#+begin_src haskell
-  instance ( ... HasServer api context ... ) -- Some preconditions omitted
-    => HasServer (QueryParam' mods sym a :> api) context where
-
-    type ServerT (QueryParam' mods sym a :> api) m =
-      RequestArgument mods a -> ServerT api m
-#+end_src
-
-In the precondition, we have ~(HasServer api context)~, requiring the type level function to be defined for the tail portion of the API. 
-In the body of the class instance, we see when ~ServerT~ is applied to an API of the shape ~((QueryParam' mods sym a) :> api)~, it constructs a function, where:
-- The input type is ~(RequestArgument mods a)~, and
-- The output type is the result of applying the type level function ~ServerT~ to ~api~ and ~m~ (Which we know exists by the precondition).
-
-** What is ~(Get '[JSON] Int)~
-
-Hidden behind more abstraction, the ~Get~ combinator from the API definition is also a type synonym. From the source code [fn:5] [fn:6], we can see that:
+From the source code, [fn:5] [fn:6], we notice ~Get~ is a type synonym:
 #+begin_src haskell
   type Get = Verb 'GET 200
 #+end_src
 
-Thus we have ~(Get '[JSON] Int) = (Verb 'Get 200 '[JSON] Int)~
+Thus, we have:
+#+begin_src haskell
+  Get '[JSON] Int = Verb 'Get 200 '[JSON] Int
+#+end_src
 
-** Combining Everything
+** Image of ~ServerT~ on ~Verb~
 
-The ~HasServer~ instance we are concerned about is the following one [fn:7]:
+There is an ~HasServer~ instance associated with ~Verb~ [fn:7]:
 
 #+begin_src haskell
   instance {-# OVERLAPPABLE #-} ( ... ) -- some preconditions omitted
@@ -82,6 +81,8 @@ The ~HasServer~ instance we are concerned about is the following one [fn:7]:
     
     type ServerT (Verb method status ctypes a) m = m a
 #+end_src
+
+** Evaluating ~(Server MyAPI)~
 
 Combining with the type synonyms we have from before, we have the following type equalities:
 
@@ -99,17 +100,37 @@ This explains why the tutorial says we need to supply a ~Server~ type with a ~Ha
 
 Notice, the case from the tutorial was simple. As we seen, if the API is more complicated (for example contains ~QueryParam~), then the type of the handler we need to produce may also be more complicated (for example a function type to account for the param string).
 
+* Appendix: Other Combinators
+
+In ~servant~, API are represented as types, and constructed using type constructors (or "combinators"). Two such constructors are:
+- ~QueryParam~ :: Represents an API with a query string parameter, and
+- ~:>~ :: Sequencing combinators.
+
+With that knowledge, consider the following ~HasServer~ instance from the ~servant~ source code:
+#+begin_src haskell
+  instance ( ... HasServer api context ... ) -- Some preconditions omitted
+    => HasServer (QueryParam' mods sym a :> api) context where
+
+    type ServerT (QueryParam' mods sym a :> api) m =
+      RequestArgument mods a -> ServerT api m
+#+end_src
+
+- In the precondition, we have ~(HasServer api context)~, requiring the type level function to be defined for the tail portion of the API. 
+- In the body of the class instance, we see when ~ServerT~ is applied to an API of the shape ~((QueryParam' mods sym a) :> api)~, it constructs a function, where:
+  - The input type is ~(RequestArgument mods a)~, and
+  - The output type is the result of applying the type level function ~ServerT~ to ~api~ and ~m~ (Which we know exists by the precondition).
+
 * Footnotes
 
 [fn:1] ~servant~ tutorial: [[https://docs.servant.dev/en/latest/tutorial/Server.html#a-first-example][Serving an API - A first example]]
 
-[fn:2] ~servant~ source code:  [[https://hackage-content.haskell.org/package/servant-server-0.20.3.0/docs/src/Servant.Server.Internal.html#HasServer][~Servant.Server~ ~HasServer~]]
+[fn:2] ~servant~ source code: [[https://hackage-content.haskell.org/package/servant-server-0.20.3.0/docs/src/Servant.Server.Internal.html#HasServer][~Servant.Server~ ~HasServer~]]
 
 [fn:3] GHC Documentation: [[https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/type_families.html][6.4.10 Language extensions, Types, Type Families]]
 
 [fn:4] HaskellWiki: [[https://wiki.haskell.org/Type_synonym][Type Synonym]]
 
-[fn:5] ~sservant~ source code: [[https://hackage-content.haskell.org/package/servant-0.20.3.0/docs/src/Servant.API.Verbs.html#Get][~Servant.API.Verb Get~]]
+[fn:5] ~servant~ source code: [[https://hackage-content.haskell.org/package/servant-0.20.3.0/docs/src/Servant.API.Verbs.html#Get][~Servant.API.Verb Get~]]
 
 [fn:6] ~servant~ source code: [[https://hackage-content.haskell.org/package/servant-0.20.3.0/docs/src/Servant.API.Verbs.html#Verb][Servant.API.Verb Verb]]
 

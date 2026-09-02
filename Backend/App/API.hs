@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 
@@ -19,7 +18,7 @@ data API mode = API
 data UserAPI mode = UserAPI
     { postUser :: mode :- ReqBody '[JSON] User :> PostCreated '[JSON] (Entity User)
     , getAllUsers :: mode :- Get '[JSON] [Entity User]
-    } deriving Generic
+    } deriving (Generic)
 
 data TripAPI mode = TripAPI
     { tripCollection :: mode :- "trips" :> NamedRoutes TripCollectionAPI
