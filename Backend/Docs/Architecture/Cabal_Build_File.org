@@ -1,13 +1,11 @@
-#+TITLE: Environment and Setup
+#+TITLE: Cabal Build File
 
-* The Cabal File
-
-** ~ghc-options~
+* ~ghc-options~
 
 - ~-threaded~ :: Since version 0.3.0, the ~timer-manager~ package that ~wai~ depends on requires threaded runtime
 
 
-** ~default-language~
+* ~default-language~
 
 At the start of my development, Servant was on version 0.20.3.0. HLS was on version 2.14.0.0.
 The latest GHC version that was both tested by Servant and compatible with the HLS was version 9.8.4, which only supported up to ~GHC2021~

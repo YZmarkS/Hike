@@ -2,13 +2,13 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module API.Endpoint.Place
+module API.Handlers.Place
   ( PlaceAPI
   , postPlaceServer
   , getPlacesServer
   ) where
 
-import API.Endpoint.Internal
+import API.Handlers.Internal
 import Control.Monad
 import Control.Monad.Reader
 import Database.Persist.Sql
