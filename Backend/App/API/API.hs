@@ -6,37 +6,49 @@ module API where
 
 import GHC.Generics
 import Model
+import Data.Text
 import Database.Persist
 import Servant
 import Servant.Auth as SA
 
-data API mode = API
-    { user :: mode :- "user" :> NamedRoutes UserAPI
-    , trip :: mode :- Auth '[SA.BasicAuth] UserId :> NamedRoutes API.TripAPI
+data API mode = MkAPI
+    { admin :: mode :- "admin" :> NamedRoutes AdminAPI
+    , user :: mode :- "user" :> NamedRoutes UserAPI
+    , trip :: mode :- Auth '[SA.BasicAuth] UserId :> "trips" :> NamedRoutes API.TripAPI
     } deriving (Generic)
 
-data UserAPI mode = UserAPI
+data AdminAPI mode = MkAdminAPI
+    { getAllUsers :: mode :- "all_users" :> Get '[JSON] [Entity User]
+    , getAllTrips :: mode :- "all_trips" :> Get '[JSON] [Entity Trip]
+    } deriving (Generic)
+
+data UserAPI mode = MkUserAPI
     { postUser :: mode :- ReqBody '[JSON] User :> PostCreated '[JSON] (Entity User)
-    , getAllUsers :: mode :- Get '[JSON] [Entity User]
     } deriving (Generic)
 
-data TripAPI mode = TripAPI
-    { tripCollection :: mode :- "trips" :> NamedRoutes TripCollectionAPI
-    , tripOwnerResource :: mode :- "trip" :> Capture "trip_id" TripId :> NamedRoutes TripOwnerResourceAPI
-    -- , tripMemberResource :: mode :- "trip" :> Capture "trip_id" TripId :> NamedRoutes TripMemberResourceAPI
+data TripAPI mode = MkTripAPI
+    { tripCollection :: mode :- NamedRoutes TripCollectionAPI
+    , tripResource :: mode :- Capture "trip_id" TripId :> NamedRoutes TripResourceAPI
+    , placeResource :: mode :- Capture "trip_id" TripId :> NamedRoutes PlaceResourceAPI
+    , membershipResource :: mode :- Capture "trip_id" TripId :> NamedRoutes MembershipResourceAPI
     } deriving (Generic)
 
-data TripCollectionAPI mode = TripCollectionAPI
+data TripCollectionAPI mode = MkTripCollectionAPI
     { postTrip :: mode :- ReqBody '[JSON] Trip :> PostCreated '[JSON] TripId
     , getUserTrips :: mode :- Get '[JSON] [Entity Trip]
-    , getAllTrips :: mode :- "all" :> Get '[JSON] [Entity Trip]
     } deriving (Generic)
 
-data TripOwnerResourceAPI mode = TripOwnerResourceAPI
-    { deleteTrip :: mode :- Delete '[JSON] String
-    -- , postNewMembership :: mode :- ReqBody '[JSON] UserId :> PostCreated '[JSON] MembershipId
+data TripResourceAPI mode = MkTripResourceAPI
+    { patchRename :: mode :- "rename" :> ReqBody '[JSON] Text :> Patch '[JSON] String
+    , deleteTrip :: mode :- Delete '[JSON] String
     } deriving (Generic)
 
--- data TripMemberResourceAPI mode = TripMemberResourceAPI
---     { allMembers :: mode :- "all_members" :> Get '[JSON] [Entity User]
---     } deriving (Generic)
+data PlaceResourceAPI mode = MkPlaceResourceAPI
+    { postPlace :: mode :- ReqBody '[JSON] Place :> PostCreated '[JSON] PlaceId
+    , getPlaces :: mode :- Get '[JSON] [Entity Place]
+    } deriving (Generic)
+
+data MembershipResourceAPI mode = MkMembershipResourceAPI
+    { postNewMembership :: mode :- ReqBody '[JSON] UserId :> PostCreated '[JSON] MembershipId
+    , getTripMembers :: mode :- Get '[JSON] [Entity User]
+    } deriving (Generic)

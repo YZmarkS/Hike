@@ -16,35 +16,55 @@ import Model
 import Network.Wai.Middleware.Cors
 import Network.Wai.Middleware.Servant.Options
 
-
 handler :: API (AsServerT AppM)
-handler =
-    API { user = userHandler
-        , trip = tripHandler
-        }
+handler = MkAPI
+  { admin = adminHandler
+  , user = userHandler
+  , trip = tripHandler
+  }
 
-userHandler :: UserAPI  (AsServerT AppM)
-userHandler =
-    UserAPI { postUser = postUserServer
-            , getAllUsers = getAllUsersServer
-            }
+adminHandler :: AdminAPI (AsServerT AppM)
+adminHandler = MkAdminAPI
+  { getAllUsers = getAllUsersHandler
+  , getAllTrips = getAllTripsHandler
+  }
+
+userHandler :: UserAPI (AsServerT AppM)
+userHandler = MkUserAPI
+  { postUser = postUserHandler
+  }
 
 tripHandler :: HikeAuthResult -> TripAPI (AsServerT AppM)
-tripHandler hikeAuthResult =
-    TripAPI { tripCollection = tripCollectionHandler hikeAuthResult
-             , tripOwnerResource = tripOwnerResourceHandler hikeAuthResult
-             }
+tripHandler hikeAuthResult = MkTripAPI
+  { tripCollection = tripCollectionHandler hikeAuthResult
+  , tripResource = tripResourceHandler hikeAuthResult
+  , placeResource = placeResourceHandler hikeAuthResult
+  , membershipResource = membershipResourceHandler hikeAuthResult
+  }
 
 tripCollectionHandler :: HikeAuthResult -> TripCollectionAPI (AsServerT AppM)
-tripCollectionHandler hikeAuthResult =
-    TripCollectionAPI { postTrip = postTripServer hikeAuthResult
-                      , getUserTrips = getUserTripsServer hikeAuthResult
-                      , getAllTrips = getAllTripsServer
-                      }
+tripCollectionHandler hikeAuthResult = MkTripCollectionAPI
+  { postTrip = postTripHandler hikeAuthResult
+  , getUserTrips = getUserTripsHandler hikeAuthResult
+  }
 
-tripOwnerResourceHandler :: HikeAuthResult -> TripId -> TripOwnerResourceAPI (AsServerT AppM)
-tripOwnerResourceHandler hikeAuthResult tripId =
-    TripOwnerResourceAPI { deleteTrip = deleteTripServer hikeAuthResult tripId }
+tripResourceHandler :: HikeAuthResult -> TripId -> TripResourceAPI (AsServerT AppM)
+tripResourceHandler hikeAuthResult tripId = MkTripResourceAPI
+  { patchRename = patchRenameHandler hikeAuthResult tripId
+  , deleteTrip = deleteTripHandler hikeAuthResult tripId
+  }
+
+placeResourceHandler :: HikeAuthResult -> TripId -> PlaceResourceAPI (AsServerT AppM)
+placeResourceHandler hikeAuthResult tripId = MkPlaceResourceAPI
+  { postPlace = postPlaceHandler hikeAuthResult tripId
+  , getPlaces = getPlacesHandler hikeAuthResult tripId
+  }
+
+membershipResourceHandler :: HikeAuthResult -> TripId -> MembershipResourceAPI (AsServerT AppM)
+membershipResourceHandler hikeAuthResult tripId = MkMembershipResourceAPI
+  { postNewMembership = postNewMembershipServer hikeAuthResult tripId
+  , getTripMembers = getTripMembersServer hikeAuthResult tripId
+  }
 
 applicationCreation :: ConnectionPool -> IO Application
 applicationCreation pool = do

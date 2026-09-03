@@ -53,7 +53,9 @@ seed = runSqliteInfo sqliteConnInfo $ do
   let tripEntities = zipWith Entity tripKeys tripRecords
   liftIO $ mapM_ print tripEntities
   -- Make some membership
-  let membershipRecords = [ Membership (userKeys !! 2) (tripKeys !! 0)
+  let membershipRecords = [ Membership (userKeys !! 0) (tripKeys !! 0)
+                          , Membership (userKeys !! 2) (tripKeys !! 0)
+                          , Membership (userKeys !! 1) (tripKeys !! 1)
                           , Membership (userKeys !! 3) (tripKeys !! 1)
                           ]
   membershipKeys <- insertMany membershipRecords

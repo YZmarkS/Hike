@@ -10,15 +10,15 @@ import Database.Persist.Sql
 import Model
 import Servant
 
-postUserServer :: User -> AppM (Entity User)
-postUserServer user = do
+postUserHandler :: User -> AppM (Entity User)
+postUserHandler user = do
   { pool <- asks id
   ; sqlResult <- liftIO $ runSqlPool (insertUniqueEntity user) pool
   ; case sqlResult of
       Nothing -> throwError $ err409 { errBody = "Cannot insert due to uniqueness" }
       Just newUserId -> return newUserId }
 
-getAllUsersServer :: AppM [Entity User]
-getAllUsersServer = do
+getAllUsersHandler :: AppM [Entity User]
+getAllUsersHandler = do
   { pool <- asks id
   ; liftIO $ runSqlPool (selectList [] []) pool }

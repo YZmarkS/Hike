@@ -2,11 +2,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module API.Handlers.Trip where
+
 import Auth
+import Data.Text
 import API.Handlers.Internal
 import API.Handlers.Internal.Auth
-import Data.String
-import Data.ByteString.Lazy
 import Control.Monad.Reader
 import Control.Exception
 import qualified Database.Persist.Sql as P

@@ -1,0 +1,6 @@
+:PROPERTIES:
+:ID:       73c3bcbc-3dbe-4be5-8571-e60003e6a0ac
+:END:
+#+TITLE: No Content and Cookies
+
+If the context uses the default cookie setting and there is an endpoint returning no content, then there might be a compile error

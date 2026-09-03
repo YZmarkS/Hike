@@ -2,36 +2,31 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module API.Handlers.Place
-  ( PlaceAPI
-  , postPlaceServer
-  , getPlacesServer
-  ) where
+module API.Handlers.Place where
 
+import Auth
 import API.Handlers.Internal
+import API.Handlers.Internal.Auth
 import Control.Monad
 import Control.Monad.Reader
 import Database.Persist.Sql
 import Servant
 import Model
 
-type PostPlace = Capture "trip_id" TripId :> ReqBody '[JSON] Place :> PostCreated '[JSON] PlaceId
+postPlaceHandler :: HikeAuthResult -> TripId -> Place -> AppM PlaceId
+postPlaceHandler hikeAuthResult tripId place = do
+  { userId <- extractUserId hikeAuthResult
+  ; userId `isMemberOf` tripId
+  ; let canonicalPlace = place { placeTripId = tripId, placeCreatorId = userId }
+  ; pool <- asks id
+  ; maybePlaceId <- liftIO $ runSqlPool (insertUnique place) pool
+  ; case maybePlaceId of
+      Nothing -> throwError $ err409 { errBody = "Cannot insert new place" }
+      Just newId -> return newId }
 
-postPlaceServer :: TripId -> Place -> AppM PlaceId
-postPlaceServer pathTripId place = do
-  pool <- asks id
-  let bodyTripId = placeTripId place
-  when (pathTripId /= bodyTripId) (throwError $ err400 { errBody = "Inconsistent trip id" })
-  sqlResult <- liftIO $ runSqlPool (insertBy place) pool
-  case sqlResult of
-    Left _ -> throwError $ err409 { errBody = "Place already exists" }
-    Right newId -> return newId
-
-type GetPlaces = Capture "trip_id" TripId :> "places" :> Get '[JSON] [Entity Place]
-
-getPlacesServer :: TripId -> AppM [Entity Place]
-getPlacesServer tripId = do
-  pool <- asks id
-  liftIO $ runSqlPool (selectList [PlaceTripId ==. tripId] []) pool
-
-type PlaceAPI = PostPlace :<|> GetPlaces
+getPlacesHandler :: HikeAuthResult -> TripId -> AppM [Entity Place]
+getPlacesHandler hikeAuthResult tripId = do
+  { userId <- extractUserId hikeAuthResult
+  ; userId `isMemberOf` tripId
+  ; pool <- asks id
+  ; liftIO $ runSqlPool (selectList [PlaceTripId ==. tripId] []) pool }
