@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module API.Handlers.Place where
@@ -7,7 +6,6 @@ module API.Handlers.Place where
 import Auth
 import API.Handlers.Internal
 import API.Handlers.Internal.Auth
-import Control.Monad
 import Control.Monad.Reader
 import Database.Persist.Sql
 import Servant
@@ -19,7 +17,7 @@ postPlaceHandler hikeAuthResult tripId place = do
   ; userId `isMemberOf` tripId
   ; let canonicalPlace = place { placeTripId = tripId, placeCreatorId = userId }
   ; pool <- asks id
-  ; maybePlaceId <- liftIO $ runSqlPool (insertUnique place) pool
+  ; maybePlaceId <- liftIO $ runSqlPool (insertUnique canonicalPlace) pool
   ; case maybePlaceId of
       Nothing -> throwError $ err409 { errBody = "Cannot insert new place" }
       Just newId -> return newId }
