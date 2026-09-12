@@ -1,11 +1,11 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module API.Handlers.Membership where
+module Handlers.Membership where
 
 import Auth
-import API.Handlers.Internal
-import API.Handlers.Internal.Auth
+import Handlers.Internal
+import Handlers.Internal.Auth
 import Control.Monad.Reader
 import qualified Database.Persist.Sql as P
 import Database.Esqueleto.Experimental

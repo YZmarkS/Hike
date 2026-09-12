@@ -3,7 +3,7 @@
 module ServantApp where
 
 import API
-import API.Handlers
+import Handlers
 import Auth
 import Control.Monad.Reader
 import Database.Persist.Sql

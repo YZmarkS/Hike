@@ -1,11 +1,11 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module API.Handlers.Place where
+module Handlers.Place where
 
 import Auth
-import API.Handlers.Internal
-import API.Handlers.Internal.Auth
+import Handlers.Internal
+import Handlers.Internal.Auth
 import Control.Monad.Reader
 import Database.Persist.Sql
 import Servant

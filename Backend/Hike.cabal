@@ -70,12 +70,33 @@ library Models
                    , Model.Enum
     default-language: GHC2021
 
+library Types
+    import: Dependencies
+    ghc-options: -Wall
+    build-depends: Models
+    hs-source-dirs: App/Types
+    exposed-modules: Types
+    other-modules:
+    default-language: GHC2021
+
 library Authentications
     import: Dependencies
     ghc-options: -Wall
     build-depends: Models
+                 , Types
     hs-source-dirs: App/Auth
     exposed-modules: Auth
+    other-modules:
+    default-language: GHC2021
+
+library APIs
+    import: Dependencies
+    ghc-options: -Wall
+    build-depends: Models
+                 , Types
+                 , Authentications
+    hs-source-dirs: App/API
+    exposed-modules: API
     other-modules:
     default-language: GHC2021
 
@@ -83,17 +104,18 @@ library Handlers
     import: Dependencies
     ghc-options: -Wall
     build-depends: Models
+                 , Types
                  , Authentications
-    hs-source-dirs: App/API
-    exposed-modules: API
-                   , API.Handlers
-                   , API.Handlers.User
-                   , API.Handlers.Trip
-                   , API.Handlers.Itinerary
-                   , API.Handlers.Membership
-                   , API.Handlers.Place
-                   , API.Handlers.Internal
-                   , API.Handlers.Internal.Auth
+                 , APIs
+    hs-source-dirs: App/Handlers
+    exposed-modules: Handlers
+                   , Handlers.User
+                   , Handlers.Trip
+                   , Handlers.Itinerary
+                   , Handlers.Membership
+                   , Handlers.Place
+                   , Handlers.Internal
+                   , Handlers.Internal.Auth
     other-modules:
     default-language: GHC2021
 
@@ -104,8 +126,10 @@ executable Hike
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends: Models
-                 , Handlers
+                 , Types
                  , Authentications
+                 , APIs
+                 , Handlers
     other-modules: WarpApp
                  , ServantApp
                  , Seed

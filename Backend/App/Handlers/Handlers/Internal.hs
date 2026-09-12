@@ -1,4 +1,4 @@
-module API.Handlers.Internal
+module Handlers.Internal
     ( AppM
     ) where
 

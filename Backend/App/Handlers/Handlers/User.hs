@@ -1,9 +1,9 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module API.Handlers.User where
+module Handlers.User where
 
-import API.Handlers.Internal
+import Handlers.Internal
 import Control.Monad.IO.Class
 import Control.Monad.Reader
 import Database.Persist.Sql

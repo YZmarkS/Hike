@@ -1,12 +1,12 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module API.Handlers.Trip where
+module Handlers.Trip where
 
 import Auth
 import Data.Text
-import API.Handlers.Internal
-import API.Handlers.Internal.Auth
+import Handlers.Internal
+import Handlers.Internal.Auth
 import Control.Monad.Reader
 import Control.Exception
 import qualified Database.Persist.Sql as P
