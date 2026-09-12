@@ -35,14 +35,12 @@ authCheck pool (BasicAuthData username _) =
                        runSqlPool
                        (selectList [UserUsername ==. decodeUtf8Lenient username] [])
                        pool
-       ; print candidates
        ; return $ case candidates of
                     [] -> Indefinite
                     (user : _) -> Authenticated (entityKey user) }
 
 instance FromBasicAuthData UserId where
     fromBasicAuthData authData authCheckFunction = authCheckFunction authData
-
 
 -- Known integration issue between servant-options and authentication:
 -- https://github.com/sordina/servant-options/issues/2
