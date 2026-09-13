@@ -10,6 +10,8 @@ import Data.Text
 import Database.Persist
 import Servant
 import Servant.Auth as SA
+import Types
+import Types.User
 
 data API mode = MkAPI
   { admin :: mode :- "admin" :> NamedRoutes AdminAPI
@@ -18,12 +20,13 @@ data API mode = MkAPI
   } deriving (Generic)
 
 data AdminAPI mode = MkAdminAPI
-  { getAllUsers :: mode :- "all_users" :> Get '[JSON] [Entity User]
+  { getAllUsers :: mode :- "all_users" :> Get '[JSON] [PublicUserData]
   , getAllTrips :: mode :- "all_trips" :> Get '[JSON] [Entity Trip]
   } deriving (Generic)
 
 data UserAPI mode = MkUserAPI
-  { postUser :: mode :- ReqBody '[JSON] User :> PostCreated '[JSON] (Entity User)
+  { postUser :: mode :- "register" :> ReqBody '[JSON] SignUp :> PostCreated '[JSON] UserId
+  , postLogin :: mode :- "login" :> ReqBody '[JSON] Login :> PostCreated '[JSON] UserId
   } deriving (Generic)
 
 data TripAPI mode = MkTripAPI
@@ -76,5 +79,5 @@ data MembershipResourceAPI mode = MkMembershipResourceAPI
   { postNewMembership ::
       mode :- ReqBody '[JSON] UserId :> PostCreated '[JSON] MembershipId
   , getTripMembers ::
-      mode :- Get '[JSON] [Entity User]
+      mode :- Get '[JSON] [PublicUserData]
   } deriving (Generic)

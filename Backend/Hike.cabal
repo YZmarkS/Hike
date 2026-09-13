@@ -28,8 +28,10 @@ extra-doc-files:    CHANGELOG.md
 
 common Dependencies
     build-depends: base
+                 , crypton
                  , bytestring
                  , text
+                 , ram
                  , directory
                  , time
                  , base-compat
@@ -76,6 +78,7 @@ library Types
     build-depends: Models
     hs-source-dirs: App/Types
     exposed-modules: Types
+                   , Types.User
     other-modules:
     default-language: GHC2021
 
@@ -86,6 +89,7 @@ library Authentications
                  , Types
     hs-source-dirs: App/Auth
     exposed-modules: Auth
+                   , Auth.Hashing
     other-modules:
     default-language: GHC2021
 

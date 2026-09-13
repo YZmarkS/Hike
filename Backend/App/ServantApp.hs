@@ -32,6 +32,7 @@ adminHandler = MkAdminAPI
 userHandler :: UserAPI (AsServerT AppM)
 userHandler = MkUserAPI
   { postUser = postUserHandler
+  , postLogin = postLoginHandler
   }
 
 tripHandler :: HikeAuthResult -> TripAPI (AsServerT AppM)

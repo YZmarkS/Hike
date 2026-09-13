@@ -13,6 +13,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 module Model where
 
+import Data.ByteString
 import Data.Time
 import Data.Text
 import Database.Persist.Sqlite
@@ -21,9 +22,11 @@ import Database.Persist.TH
 import Model.Enum
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
-User json
+User
     username Text
     email Text
+    salt ByteString
+    hashedPassword ByteString
     UniqueEmail email
     deriving Eq Show
 
