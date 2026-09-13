@@ -27,38 +27,41 @@ extra-doc-files:    CHANGELOG.md
 
 
 common Dependencies
-    build-depends: base
-                 , crypton
-                 , bytestring
-                 , text
-                 , ram
-                 , directory
-                 , time
-                 , base-compat
-                 , exceptions
-                 , mtl
-                 , aeson
+    build-depends: aeson
                  , attoparsec
-                 , string-conversions
-                 , lucid
-                 , http-media
-                 , http-types
+                 , base
+                 , base-compat
                  , blaze-html
                  , blaze-markup
-                 , wai
-                 , warp
+                 , bytestring
+                 , conduit
+                 , crypton
+                 , directory
+                 , esqueleto
+                 , exceptions
+                 , http-media
+                 , http-types
+                 , jose
+                 , lens
+                 , lucid
+                 , monad-logger
+                 , monad-time
+                 , mtl
+                 , persistent
+                 , persistent-sqlite
+                 , ram
                  , servant ^>= 0.20.3.0
-                 , servant-server
-                 , servant-js
                  , servant-auth
                  , servant-auth-server
                  , servant-foreign
-                 , persistent
-                 , persistent-sqlite
-                 , esqueleto
-                 , monad-logger
-                 , conduit
+                 , servant-js
+                 , servant-server
+                 , string-conversions
+                 , text
+                 , time
                  , transformers
+                 , wai
+                 , warp
                  -- The following packages are mostly for dev, should remove when production
                  , wai-cors
                  , servant-options
@@ -79,6 +82,7 @@ library Types
     hs-source-dirs: App/Types
     exposed-modules: Types
                    , Types.User
+                   , Types.Handlers
     other-modules:
     default-language: GHC2021
 
@@ -90,6 +94,7 @@ library Authentications
     hs-source-dirs: App/Auth
     exposed-modules: Auth
                    , Auth.Hashing
+                   , Auth.JWT
     other-modules:
     default-language: GHC2021
 

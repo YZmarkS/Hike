@@ -30,6 +30,12 @@ User
     UniqueEmail email
     deriving Eq Show
 
+RefreshTokens
+    userId UserId
+    jwt ByteString
+    UniqueUserId userId
+    deriving Eq Show
+
 Trip json
     ownerId UserId
     name Text

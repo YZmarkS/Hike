@@ -4,6 +4,7 @@
 module Handlers.User where
 
 import Handlers.Internal
+import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Reader
 
@@ -14,6 +15,7 @@ import Types
 import Types.User
 import Crypto.Error
 import Auth.Hashing
+import Auth.JWT
 
 postUserHandler :: SignUp -> AppM UserId
 postUserHandler signUp = do
@@ -38,19 +40,18 @@ postLoginHandler :: Login -> AppM UserId
 postLoginHandler login = do
   { let email = loginEmail login
         password = loginPassword login
-  ; liftIO $ print email
   ; pool <- asks Prelude.id
   ; maybeUser :: Maybe (Entity User) <- liftIO $ runSqlPool (getBy $ UniqueEmail email) pool
   ; userEntity <- case maybeUser of
                     Nothing -> throwError err401
                     Just user -> return user
   ; let user = entityVal userEntity
+        userId = entityKey userEntity
         salt = userSalt user
         hashedPassword = userHashedPassword user
-  ; liftIO $ print (salt, hashedPassword)
-  ; if hashAndCompare password salt hashedPassword
-    then return $ entityKey userEntity
-    else throwError err401
+  ; unless (hashAndCompare password salt hashedPassword) $ throwError err401
+  ; (accessJWT, refreshJWT) <- generateTokensForUser _ userId
+  ; return $ entityKey userEntity
   }
 
 
