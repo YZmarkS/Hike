@@ -13,6 +13,9 @@ import Crypto.KDF.Argon2
 argonOptions :: Crypto.KDF.Argon2.Options
 argonOptions = defaultOptions { variant = Argon2id }
 
+saltLength :: Int
+saltLength = 64
+
 hashLength :: Int
 hashLength = 64
 
@@ -21,7 +24,7 @@ genSaltAndHash ::
   => Text -> m (CryptoFailable (salt, out))
 genSaltAndHash password = do
   { let passwordAsBytes = encodeUtf8 password
-  ; salt <- getRandomBytes 64
+  ; salt <- getRandomBytes saltLength
   ; let hashResult = hash argonOptions passwordAsBytes salt hashLength
   ; case hashResult of
       CryptoPassed hashedPassword -> return $ return (salt, hashedPassword)

@@ -26,8 +26,6 @@ postUserHandler signUp = do
   ; (salt, hashedPassword) <- case hashResult of
                                 CryptoFailed _ -> throwError err500
                                 CryptoPassed pair -> return pair
-
-  ; liftIO $ print (salt, hashedPassword)
   ; let newUser = User username email salt hashedPassword
   ; pool <- asks Prelude.id
   ; sqlResult <- liftIO $ runSqlPool (insertUniqueEntity newUser) pool
