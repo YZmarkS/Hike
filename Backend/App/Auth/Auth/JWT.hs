@@ -25,13 +25,13 @@ newtype AccessClaimsSet = AccessClaimsSet ClaimsSet
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 instance HasClaimsSet AccessClaimsSet where
-  claimsSet f (AccessClaimsSet innerClaimsSet)  = fmap AccessClaimsSet (f innerClaimsSet)
+  claimsSet f (AccessClaimsSet innerClaimsSet) = fmap AccessClaimsSet (f innerClaimsSet)
 
 newtype RefreshClaimsSet = RefreshClaimsSet ClaimsSet
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 instance HasClaimsSet RefreshClaimsSet where
-  claimsSet f (RefreshClaimsSet innerClaimsSet)  = fmap RefreshClaimsSet (f innerClaimsSet)
+  claimsSet f (RefreshClaimsSet innerClaimsSet) = fmap RefreshClaimsSet (f innerClaimsSet)
 
 accessLifespan :: NominalDiffTime
 accessLifespan = 5 :: NominalDiffTime
@@ -48,7 +48,7 @@ mkAccessClaimsSet time userId =
   & claimExp ?~ NumericDate (addUTCTime accessLifespan time)
   & AccessClaimsSet
 
-mkRefreshClaimsSet :: UTCTime -> UserId ->  RefreshClaimsSet
+mkRefreshClaimsSet :: UTCTime -> UserId -> RefreshClaimsSet
 mkRefreshClaimsSet time userId =
   emptyClaimsSet
   & claimSub ?~ fromString (show userId)
