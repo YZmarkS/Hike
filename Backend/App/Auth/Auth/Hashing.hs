@@ -19,10 +19,10 @@ saltLength = 64
 hashLength :: Int
 hashLength = 64
 
-genSaltAndHash ::
+genSaltThenHash ::
   (MonadRandom m, ByteArray salt, ByteArray out)
   => Text -> m (CryptoFailable (salt, out))
-genSaltAndHash password = do
+genSaltThenHash password = do
   { let passwordAsBytes = encodeUtf8 password
   ; salt <- getRandomBytes saltLength
   ; let hashResult = hash argonOptions passwordAsBytes salt hashLength

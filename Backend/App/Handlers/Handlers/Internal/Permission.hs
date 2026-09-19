@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Handlers.Internal.Auth where
+module Handlers.Internal.Permission where
 
 import Auth
 import Control.Monad
@@ -8,8 +8,8 @@ import Control.Monad.Reader
 import Servant
 import Servant.Auth.Server
 import Model
-import Handlers.Internal
 import Database.Persist.Sql
+import Types
 
 extractUserId :: HikeAuthResult -> AppM UserId
 extractUserId (Authenticated userId) = return userId
@@ -17,7 +17,7 @@ extractUserId _ = throwError $ err401 { errBody = "Failed to Authenticate" }
 
 isMemberOf :: UserId -> TripId -> AppM ()
 isMemberOf userId tripId = do
-  { pool <- asks id
+  { pool <- asks dbPool
   ; maybeMembership <- liftIO $ runSqlPool
                        (getBy (UniqueUserInTrip userId tripId))
                        pool
@@ -27,7 +27,7 @@ isMemberOf userId tripId = do
 
 isOwnerOf :: UserId -> TripId -> AppM ()
 isOwnerOf userId tripId = do
-  { pool <- asks id
+  { pool <- asks dbPool
   ; tripResult <- liftIO $ runSqlPool (get tripId) pool
   ; isNotOwner <- case tripResult of
                  Nothing -> throwError $ err403 { errBody = "No Trip" }

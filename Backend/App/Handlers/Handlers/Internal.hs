@@ -1,9 +1,5 @@
 module Handlers.Internal
-    ( AppM
-    ) where
+  ( module Handlers.Internal.Permission
+  ) where
 
-import Control.Monad.Reader
-import Database.Persist.Sql
-import Servant
-
-type AppM = ReaderT ConnectionPool Handler
+import Handlers.Internal.Permission

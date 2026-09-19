@@ -12,13 +12,13 @@ import Control.Monad.Trans
 import Crypto.JOSE.JWK
 import Crypto.JWT
 import Data.Aeson
-import Data.ByteString.Lazy
+import qualified Data.ByteString as BS
 import Data.String
 import Data.Time
 import Model
 import Servant
 import Servant.Server.Experimental.Auth
-import Types.Handlers
+import Types
 
 
 newtype AccessClaimsSet = AccessClaimsSet ClaimsSet
@@ -42,7 +42,7 @@ refreshLifespan = 86400 :: NominalDiffTime
 mkAccessClaimsSet :: UTCTime -> UserId -> AccessClaimsSet
 mkAccessClaimsSet time userId =
   emptyClaimsSet
-  & claimSub ?~ fromString (show userId)
+  & claimSub ?~ fromString (show $ encode userId)
   & claimAud ?~ Audience ["access"]
   & claimIat ?~ NumericDate time
   & claimExp ?~ NumericDate (addUTCTime accessLifespan time)
@@ -51,7 +51,7 @@ mkAccessClaimsSet time userId =
 mkRefreshClaimsSet :: UTCTime -> UserId -> RefreshClaimsSet
 mkRefreshClaimsSet time userId =
   emptyClaimsSet
-  & claimSub ?~ fromString (show userId)
+  & claimSub ?~ fromString (show $ encode userId)
   & claimAud ?~ Audience ["refresh"]
   & claimIat ?~ NumericDate time
   & claimExp ?~ NumericDate (addUTCTime refreshLifespan time)
@@ -61,23 +61,22 @@ generateJWKForJWT :: MonadRandom m => m JWK
 generateJWKForJWT = do
   { genJWK $ OctGenParam 256 }
 
-generateTokensForUser :: JWK -> UserId -> AppM (ByteString, ByteString)
-generateTokensForUser jwk userId = do
+generateUserTokens :: JWK -> UserId -> AppM (BS.ByteString, BS.ByteString)
+generateUserTokens jwk userId = do
   { now <- liftIO getCurrentTime
   ; let accessClaimsSet = mkAccessClaimsSet now userId
         refreshClaimsSet = mkRefreshClaimsSet now userId
         jwsHeader = newJWSHeaderProtected HS256
-  ; signedAccessJWTResult <- liftIO $ runJOSE @JWTError (signJWT jwk jwsHeader accessClaimsSet)
-  ; signedAccessJWT <- case signedAccessJWTResult of
+  ; accessJWTResult <- liftIO $ runJOSE @JWTError (signJWT jwk jwsHeader accessClaimsSet)
+  ; accessJWT <- case accessJWTResult of
                          Left _ -> throwError err500
                          Right token -> return token
-  ; signedRefreshJWTResult <- liftIO $ runJOSE @JWTError (signJWT jwk jwsHeader refreshClaimsSet)
-  ; signedRefreshJWT <- case signedRefreshJWTResult of
+  ; refreshJWTResult <- liftIO $ runJOSE @JWTError (signJWT jwk jwsHeader refreshClaimsSet)
+  ; refreshJWT <- case refreshJWTResult of
                           Left _ -> throwError err500
                           Right token -> return token
-  ; return ( encodeCompact signedAccessJWT
-           , encodeCompact signedRefreshJWT
-           )
+  ; return ( BS.toStrict $ encodeCompact accessJWT
+           , BS.toStrict $ encodeCompact refreshJWT)
   }
 
 type instance AuthServerData (AuthProtect "hike-jwt-access-auth") = AccessClaimsSet

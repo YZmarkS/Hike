@@ -1,27 +1,18 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Types where
+module Types
+  ( module Types.Auth
+  , module Types.User
+  , module Types.Handlers
+  ) where
 
-import GHC.Generics
+import Types.Auth
+import Types.User
+import Types.Handlers
+
 import Control.Monad
 import Control.Monad.Trans.Class
 import Data.Aeson
-import Data.Text
-
-data SignUp = SignUp
-  { signUpEmail :: Text
-  , signUpUsername :: Text
-  , signUpPassword :: Text
-  } deriving (Show, Eq, Generic)
-
-instance FromJSON SignUp
-
-data Login = Login
-  { loginEmail :: Text
-  , loginPassword :: Text
-  } deriving (Show, Eq, Generic)
-
-instance FromJSON Login
 
 newtype ResultT m a =
   ResultT { runResultT :: m (Result a) }

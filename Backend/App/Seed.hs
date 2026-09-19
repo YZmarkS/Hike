@@ -47,7 +47,7 @@ seed :: IO ()
 seed = runSqliteInfo sqliteConnInfo $ do
   { runMigration migrateAll
   -- Populate users
-  ; saltHashPairResults <- liftIO $ mapM (genSaltAndHash . signUpPassword) signUps
+  ; saltHashPairResults <- liftIO $ mapM (genSaltThenHash . signUpPassword) signUps
   ; saltHashPairs <- liftIO $ mapM throwCryptoErrorIO saltHashPairResults
   ; let userRecords :: [User] = map (\(signUp, (salt, hash)) ->
                                        User { userUsername = signUpUsername signUp

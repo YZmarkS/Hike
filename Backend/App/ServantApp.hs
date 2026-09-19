@@ -11,6 +11,7 @@ import Servant
 import Servant.Auth.Server
 import Servant.Server.Generic
 import Model
+import Types
 
 -- The following packages are useful for dev, but think about them when deploy
 import Network.Wai.Middleware.Cors
@@ -69,7 +70,7 @@ membershipResourceHandler hikeAuthResult tripId = MkMembershipResourceAPI
 
 applicationCreation :: ConnectionPool -> IO Application
 applicationCreation pool = do
-  { jwtSigningKey <- generateKey
+  { jwtSigningKey <- generateJWKForJWT
   ; let jwtConfig = defaultJWTSettings jwtSigningKey
         authConfig = authCheck pool
         context = jwtConfig :. defaultCookieSettings :. authConfig :. EmptyContext
@@ -77,6 +78,6 @@ applicationCreation pool = do
     simpleCors $
     provideOptions (genericApi (Proxy @API)) $
     genericServeTWithContext
-    (flip runReaderT pool)
+    (`runReaderT` (MkAppState { dbPool = pool, jwk = jwtSigningKey }))
     handler
     context }

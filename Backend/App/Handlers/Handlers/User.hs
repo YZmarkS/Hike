@@ -3,42 +3,46 @@
 
 module Handlers.User where
 
-import Handlers.Internal
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Reader
-
+import qualified Data.ByteString as BS
+import Data.Function
 import Database.Persist.Sqlite
 import Model
 import Servant
 import Types
-import Types.User
 import Crypto.Error
 import Auth.Hashing
 import Auth.JWT
+import Web.Cookie
 
 postUserHandler :: SignUp -> AppM UserId
 postUserHandler signUp = do
   { let username = signUpUsername signUp
         email = signUpEmail signUp
         password = signUpPassword signUp
-  ; hashResult <- liftIO $ genSaltAndHash password
+  ; hashResult <- liftIO $ genSaltThenHash password
   ; (salt, hashedPassword) <- case hashResult of
                                 CryptoFailed _ -> throwError err500
                                 CryptoPassed pair -> return pair
   ; let newUser = User username email salt hashedPassword
-  ; pool <- asks Prelude.id
+  ; pool <- asks dbPool
   ; sqlResult <- liftIO $ runSqlPool (insertUniqueEntity newUser) pool
   ; case sqlResult of
       Nothing -> throwError $ err409 { errBody = "Cannot insert due to uniqueness" }
       Just newUserId -> return $ entityKey newUserId
   }
 
-postLoginHandler :: Login -> AppM UserId
+postLoginHandler :: Login -> AppM (Headers '[ Header' '[Optional, Strict] "Set-Cookie" SetCookie
+                                            , Header' '[Optional, Strict] "Set-Cookie" SetCookie
+                                            ]
+                                   UserId)
 postLoginHandler login = do
   { let email = loginEmail login
         password = loginPassword login
-  ; pool <- asks Prelude.id
+  ; pool <- asks dbPool
+  ; jwk <- asks jwk
   ; maybeUser :: Maybe (Entity User) <- liftIO $ runSqlPool (getBy $ UniqueEmail email) pool
   ; userEntity <- case maybeUser of
                     Nothing -> throwError err401
@@ -48,14 +52,23 @@ postLoginHandler login = do
         salt = userSalt user
         hashedPassword = userHashedPassword user
   ; unless (hashAndCompare password salt hashedPassword) $ throwError err401
-  ; (accessJWT, refreshJWT) <- generateTokensForUser _ userId
-  ; return $ entityKey userEntity
+  ; (accessJWT, refreshJWT) <- generateUserTokens jwk userId
+  ; let setAccessJWTCookie = defaultSetCookie
+                             { setCookieName = "Hike-Access-JWT"
+                             , setCookieValue = accessJWT
+                             }
+        setRefreshJWTCookie = defaultSetCookie
+                              { setCookieName = "Hike-Refresh-JWT"
+                              , setCookieValue = refreshJWT
+                              }
+  ; return $ userId
+    & addHeader' setAccessJWTCookie
+    & addHeader' setRefreshJWTCookie
   }
-
 
 getAllUsersHandler :: AppM [PublicUserData]
 getAllUsersHandler = do
-  { pool <- asks Prelude.id
+  { pool <- asks dbPool
   ; userEntities <- liftIO $ runSqlPool (selectList [] []) pool
   ; return $ map userToPublicUser userEntities
   }

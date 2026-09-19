@@ -35,6 +35,7 @@ common Dependencies
                  , blaze-markup
                  , bytestring
                  , conduit
+                 , cookie
                  , crypton
                  , directory
                  , esqueleto
@@ -81,6 +82,7 @@ library Types
     build-depends: Models
     hs-source-dirs: App/Types
     exposed-modules: Types
+                   , Types.Auth
                    , Types.User
                    , Types.Handlers
     other-modules:
@@ -93,6 +95,7 @@ library Authentications
                  , Types
     hs-source-dirs: App/Auth
     exposed-modules: Auth
+                   , Auth.BasicAuth
                    , Auth.Hashing
                    , Auth.JWT
     other-modules:
@@ -124,7 +127,7 @@ library Handlers
                    , Handlers.Membership
                    , Handlers.Place
                    , Handlers.Internal
-                   , Handlers.Internal.Auth
+                   , Handlers.Internal.Permission
     other-modules:
     default-language: GHC2021
 

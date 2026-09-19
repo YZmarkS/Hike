@@ -5,19 +5,18 @@ module Handlers.Membership where
 
 import Auth
 import Handlers.Internal
-import Handlers.Internal.Auth
 import Control.Monad.Reader
 import qualified Database.Persist.Sql as P
 import Database.Esqueleto.Experimental
 import Model
 import Servant
-import Types.User
+import Types
 
 postNewMembershipServer :: HikeAuthResult -> TripId -> UserId -> AppM MembershipId
 postNewMembershipServer hikeAuthResult tripId newUserId = do
   { userId <- extractUserId hikeAuthResult
   ; userId `isOwnerOf` tripId
-  ; pool <- asks Prelude.id
+  ; pool <- asks dbPool
   ; maybeMembershipId <- liftIO $ runSqlPool (insertUnique $ Membership newUserId tripId) pool
   ; case maybeMembershipId of
       Nothing -> throwError $ err409 { errBody = "Cannot add membership" }
@@ -27,7 +26,7 @@ getTripMembersServer :: HikeAuthResult -> TripId -> AppM [PublicUserData]
 getTripMembersServer hikeAuthResult tripId = do
   { userId <- extractUserId hikeAuthResult
   ; userId `isMemberOf` tripId
-  ; pool <- asks Prelude.id
+  ; pool <- asks dbPool
   ; let selectMembers =
             select $ do
               { (membership :& user) <-

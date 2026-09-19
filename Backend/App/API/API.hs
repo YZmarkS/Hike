@@ -11,7 +11,7 @@ import Database.Persist
 import Servant
 import Servant.Auth as SA
 import Types
-import Types.User
+import Web.Cookie
 
 data API mode = MkAPI
   { admin :: mode :- "admin" :> NamedRoutes AdminAPI
@@ -25,8 +25,15 @@ data AdminAPI mode = MkAdminAPI
   } deriving (Generic)
 
 data UserAPI mode = MkUserAPI
-  { postUser :: mode :- "register" :> ReqBody '[JSON] SignUp :> PostCreated '[JSON] UserId
-  , postLogin :: mode :- "login" :> ReqBody '[JSON] Login :> PostCreated '[JSON] UserId
+  { postUser ::
+      mode :- "register" :> ReqBody '[JSON] SignUp :> PostCreated '[JSON] UserId
+  , postLogin ::
+      mode :- "login" :> ReqBody '[JSON] Login
+      :> PostCreated '[JSON] (Headers '[ Header' '[Optional, Strict] "Set-Cookie" SetCookie
+                                       , Header' '[Optional, Strict] "Set-Cookie" SetCookie
+                                       ]
+                               UserId)
+
   } deriving (Generic)
 
 data TripAPI mode = MkTripAPI
