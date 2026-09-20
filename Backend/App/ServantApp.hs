@@ -73,7 +73,12 @@ applicationCreation pool = do
   { jwtSigningKey <- generateJWKForJWT
   ; let jwtConfig = defaultJWTSettings jwtSigningKey
         authConfig = authCheck pool
-        context = jwtConfig :. defaultCookieSettings :. authConfig :. EmptyContext
+        accessAuthHandler = jwkToAccessAuthHandler jwtSigningKey
+        context = accessAuthHandler
+          :. jwtConfig
+          :. defaultCookieSettings
+          :. authConfig
+          :. EmptyContext
   ; return $
     simpleCors $
     provideOptions (genericApi (Proxy @API)) $

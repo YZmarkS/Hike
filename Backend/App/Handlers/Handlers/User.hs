@@ -6,9 +6,9 @@ module Handlers.User where
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Reader
-import qualified Data.ByteString as BS
 import Data.Function
 import Database.Persist.Sqlite
+import Handlers.Internal
 import Model
 import Servant
 import Types
@@ -52,7 +52,8 @@ postLoginHandler login = do
         salt = userSalt user
         hashedPassword = userHashedPassword user
   ; unless (hashAndCompare password salt hashedPassword) $ throwError err401
-  ; (accessJWT, refreshJWT) <- generateUserTokens jwk userId
+  ; (accessJWT, refreshJWT) <- lift $ generateUserTokens jwk userId
+  ; _ <- upsertRefreshJWT userId refreshJWT
   ; let setAccessJWTCookie = defaultSetCookie
                              { setCookieName = "Hike-Access-JWT"
                              , setCookieValue = accessJWT

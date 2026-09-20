@@ -98,6 +98,7 @@ library Authentications
                    , Auth.BasicAuth
                    , Auth.Hashing
                    , Auth.JWT
+                   , Auth.AuthProtect
     other-modules:
     default-language: GHC2021
 
@@ -128,6 +129,7 @@ library Handlers
                    , Handlers.Place
                    , Handlers.Internal
                    , Handlers.Internal.Permission
+                   , Handlers.Internal.Auth
     other-modules:
     default-language: GHC2021
 

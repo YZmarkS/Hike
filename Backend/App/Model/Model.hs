@@ -30,9 +30,9 @@ User
     UniqueEmail email
     deriving Eq Show
 
-RefreshTokens
+RefreshToken
     userId UserId
-    jwt ByteString
+    refreshJwt ByteString
     UniqueUserId userId
     deriving Eq Show
 

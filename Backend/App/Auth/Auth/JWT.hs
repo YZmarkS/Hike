@@ -13,28 +13,28 @@ import Crypto.JOSE.JWK
 import Crypto.JWT
 import Data.Aeson
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL
 import Data.String
 import Data.Time
 import Model
 import Servant
-import Servant.Server.Experimental.Auth
-import Types
-
 
 newtype AccessClaimsSet = AccessClaimsSet ClaimsSet
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 instance HasClaimsSet AccessClaimsSet where
+  claimsSet :: Lens' AccessClaimsSet ClaimsSet
   claimsSet f (AccessClaimsSet innerClaimsSet) = fmap AccessClaimsSet (f innerClaimsSet)
 
 newtype RefreshClaimsSet = RefreshClaimsSet ClaimsSet
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 instance HasClaimsSet RefreshClaimsSet where
+  claimsSet :: Lens' RefreshClaimsSet ClaimsSet
   claimsSet f (RefreshClaimsSet innerClaimsSet) = fmap RefreshClaimsSet (f innerClaimsSet)
 
 accessLifespan :: NominalDiffTime
-accessLifespan = 5 :: NominalDiffTime
+accessLifespan = 60 :: NominalDiffTime
 
 refreshLifespan :: NominalDiffTime
 refreshLifespan = 86400 :: NominalDiffTime
@@ -61,7 +61,7 @@ generateJWKForJWT :: MonadRandom m => m JWK
 generateJWKForJWT = do
   { genJWK $ OctGenParam 256 }
 
-generateUserTokens :: JWK -> UserId -> AppM (BS.ByteString, BS.ByteString)
+generateUserTokens :: JWK -> UserId -> Handler (BS.ByteString, BS.ByteString)
 generateUserTokens jwk userId = do
   { now <- liftIO getCurrentTime
   ; let accessClaimsSet = mkAccessClaimsSet now userId
@@ -79,5 +79,19 @@ generateUserTokens jwk userId = do
            , BS.toStrict $ encodeCompact refreshJWT)
   }
 
-type instance AuthServerData (AuthProtect "hike-jwt-access-auth") = AccessClaimsSet
-type instance AuthServerData (AuthProtect "hike-jwt-refresh-auth") = RefreshClaimsSet
+
+mkVerifier ::
+  (HasClaimsSet claims, FromJSON claims)
+  => JWTValidationSettings
+  -> JWK -> BSL.ByteString -> IO (Either JWTError claims)
+mkVerifier jwtValidationSettings jwtSigningKey jwtBytes =
+  runJOSE @JWTError $ do
+  { accessJWT :: SignedJWT <- decodeCompact jwtBytes
+  ; verifyJWT jwtValidationSettings jwtSigningKey accessJWT
+  }
+
+verifyAccessJWT :: JWK -> BSL.ByteString -> IO (Either JWTError AccessClaimsSet)
+verifyAccessJWT = mkVerifier $ defaultJWTValidationSettings (== "access")
+
+verifyRefreshJWT :: JWK -> BSL.ByteString -> IO (Either JWTError RefreshClaimsSet)
+verifyRefreshJWT = mkVerifier $ defaultJWTValidationSettings (== "refresh")
