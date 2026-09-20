@@ -34,6 +34,7 @@ userHandler :: UserAPI (AsServerT AppM)
 userHandler = MkUserAPI
   { postUser = postUserHandler
   , postLogin = postLoginHandler
+  , getNothing = getNothingHandler
   }
 
 tripHandler :: HikeAuthResult -> TripAPI (AsServerT AppM)

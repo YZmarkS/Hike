@@ -13,7 +13,7 @@ import Control.Lens
 import Crypto.JWT
 import Data.Aeson
 import Data.ByteString
-
+import Data.Text.Encoding
 import Model
 import Servant
 import Servant.Foreign
@@ -53,7 +53,11 @@ accessAuthHandlerLogic jwtSigningKey request = do
   ; sub <- case maybeSub of
              Nothing -> throwError $ err401 { errBody = "No sub in token" }
              Just sub' -> return sub'
-  ; let maybeUserId :: Maybe UserId = decode (encode sub)
+  ; let maybeSubBody = sub ^? string
+  ; subText <- case maybeSubBody of
+                 Nothing -> throwError $ err401 { errBody = "sub isn't a string" }
+                 Just subText' -> return subText'
+  ; let maybeUserId :: Maybe UserId = decodeStrict (encodeUtf8 subText)
   ; liftIO $ print ("sub decode result: " <> show maybeUserId)
   ; userId <- case maybeUserId of
                 Nothing -> throwError $ err401 { errBody = "Cannot decode sub" }

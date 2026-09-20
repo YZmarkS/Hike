@@ -13,8 +13,7 @@ import Model
 import Servant
 import Types
 import Crypto.Error
-import Auth.Hashing
-import Auth.JWT
+import Auth
 import Web.Cookie
 
 postUserHandler :: SignUp -> AppM UserId
@@ -66,6 +65,9 @@ postLoginHandler login = do
     & addHeader' setAccessJWTCookie
     & addHeader' setRefreshJWTCookie
   }
+
+getNothingHandler :: AccessUserId -> AppM NoContent
+getNothingHandler _ = return NoContent
 
 getAllUsersHandler :: AppM [PublicUserData]
 getAllUsersHandler = do
