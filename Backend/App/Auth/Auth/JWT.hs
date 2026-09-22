@@ -65,25 +65,6 @@ generateJWKForJWT = do
 generateUserTokens :: JWK -> UserId -> Handler (BS.ByteString, BS.ByteString)
 generateUserTokens jwk userId = do
   { now <- liftIO getCurrentTime
-  ; liftIO $ print (userId)
-  ; liftIO $ print ""
-  ; liftIO $ print $ "Length of encoding is: "
-  ; liftIO $ print $ show $ BSL.length (encode userId)
-  ; liftIO $ print (encode userId)
-  ; liftIO $ print ""
-  ; liftIO $ print $ "Length of show encoding is: "
-  ; liftIO $ print $ show $ length (show $ encode userId)
-  ; liftIO $ print (show $ encode userId)
-  ; liftIO $ print ""
-  ; liftIO $ print $ "Length of unpack encoding is: "
-  ; liftIO $ print $ show $ length (C.unpack $ encode userId)
-  ; liftIO $ print (C.unpack $ encode userId)
-  ; liftIO $ print ""
-  ; liftIO $ print (fromString (show $ encode userId) :: StringOrURI)
-  ; liftIO $ print ""
-  ; liftIO $ print ""
-  ; liftIO $ print (decode $ C.pack $ show
-                    (fromString $ C.unpack $ encode userId :: StringOrURI) :: Maybe UserId)
   ; let accessClaimsSet = mkAccessClaimsSet now userId
         refreshClaimsSet = mkRefreshClaimsSet now userId
         jwsHeader = newJWSHeaderProtected HS256

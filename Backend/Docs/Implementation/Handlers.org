@@ -77,6 +77,9 @@ Then, simply pass the connection pool to the handler when constructing the appli
 #+end_src
 
 * Using Other Monads: An Example Using ReaderT
+:PROPERTIES:
+:ID:       6adb5671-bec3-4335-9727-a47fa4617fbf
+:END:
 
 When the app gets complicated, passing external resources into each handler can be very tedious. One may consider using ~ReaderT~ to provide handler with a context to run in.
 

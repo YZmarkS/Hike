@@ -1,0 +1,147 @@
+:PROPERTIES:
+:ID:       41249c8c-454e-47d5-bdde-0624973cb94b
+:END:
+#+TITLE: Implementing JWT with JOSE
+
+Here we describe the process of implementing JWT with the ~jose~ library.
+
+* Overview of Dataflow
+
+** Setup
+
+On server startup, generate and store a global [[https://www.rfc-editor.org/info/rfc7517/][JSON Web Key (JWK)]] [fn:1] to be used for this server session. 
+
+** Signing 
+
+1. Get current time.
+2. Fill in JWT claims.
+3. Sign the JWT using the global JWK.
+
+** Verifying
+
+1. Verify the JWT with the global JWK.
+2. Extract and process JWT claims.
+
+* Implementation Details
+
+** Setup
+:PROPERTIES:
+:ID:       d567c5d6-c715-46e1-ac38-d83f9e030ec7
+:END:
+
+The ~Crypto.JOSE.JWK~ module provides the function [[https://hackage-content.haskell.org/package/jose-0.13/docs/Crypto-JOSE-JWK.html#v:genJWK][~genJWT~]] [fn:2] for generating JWK:
+#+begin_src haskell
+  genJWK :: MonadRandom m => KeyMaterialGenParam -> m JWK
+
+  data KeyMaterialGenParam
+    = ECGenParam Crv
+    | RSAGenParam Int
+    | OctGenParam Int
+    | OKPGenParam OKPCrv
+#+end_src
+We can generate the JWK at the start of the ~main~ function, because ~IO~ is an instance of ~MonadRandom~.
+
+The generated JWK needs to be accessible by the handler of the login endpoint. To supply it, we can use a ~ReaderT~ monad transformer, and make endpoint handlers compute in a different monad. Refer to [[id:6adb5671-bec3-4335-9727-a47fa4617fbf][this other documentation]] for how to create a handler with access to some read only resource.
+
+** Creating JWT Claims
+:PROPERTIES:
+:ID:       9f0f3431-7931-47b9-81d8-3b1762a548f6
+:END:
+
+We first construct [[https://datatracker.ietf.org/doc/html/rfc7519#section-4][JWT claims]] [fn:4]. The ~Crypto.JOSE.JWT~ module provides the type ~ClaimsSet~ to represent the collection of JWT claims. More generally, the typeclass ~HasClaimsSet payload~ says ~payload~ can be used to represent JWT claims. 
+
+A type is an instance of ~HasClaimsSet~ if it can provide the [[https://hackage.haskell.org/package/lens][lenses]] [fn:5] to access [[https://datatracker.ietf.org/doc/html/rfc7519#section-4.1][JWT registered claims]] [fn:7]. Editing the values of claims are done using lens functions.
+
+*WIP: Understand lenses*
+
+** Special Types for JWT Claims
+
+The JWT specification requires some claims (such as ~aud~) to be of type ~StringOrURI~, which by definition is:
+#+begin_quote
+A JSON string value, with the additional requirement that while arbitrary string values MAY be used, any value containing a ":" character MUST be a URI [RFC3986]...
+#+end_quote
+This means one cannot use an encoding of JSON object as the claim content, because a JSON object encoding most likely contains a ~:~ but is clearly not an URI.
+
+~jose~ provides an corresponding type [[https://hackage-content.haskell.org/package/jose-0.13/docs/Crypto-JWT.html#t:StringOrURI][~StringOrURI~]] [fn:3]. The type is a bit awkward to deal with, as the only way to construct it is by using ~fromString~ provided by the ~IsString~ instance, and the function is not even total.
+
+String encoding is tricky, we go over the correct implementation in [[id:5dce0651-61f9-48e2-a5db-1cc47f4c6504][a later section]].
+
+** Signing
+
+The ~Crypto.JOSE.JWT~ module provides the [[https://hackage-content.haskell.org/package/jose-0.13/docs/Crypto-JWT.html#v:signJWT][~signJWT~]] function [fn:3] to sign a JWT:
+#+begin_src haskell
+  signJWT
+  :: ( MonadRandom m, MonadError e m, AsError e
+     , HasJWSHeader h, HasParams h
+     , ToJSON payload )
+  => JWK
+  -> h RequiredProtection      -- JWSHeader
+  -> payload                   -- In this case the JWT
+  -> m (SignedJWTWithHeader h) -- Signing result 
+#+end_src
+
+We go over the arguments
+- ~JWK~ :: We already have that from [[id:d567c5d6-c715-46e1-ac38-d83f9e030ec7][the setup phase]].
+- ~h RequiredProtection~ :: This can be constructed by looking up ~JWSHeader~ related functions.
+- ~payload~ :: Most of the time, this is [[id:9f0f3431-7931-47b9-81d8-3b1762a548f6][the claims set we created earlier]].
+- ~m (SignedJWTWithHeader h)~ :: Signed JWT.
+
+** Signing Environment
+
+~signJWT~ needs to be executed in a monad satisfying the following constraints:
+#+begin_src haskell
+  signJWT
+  :: ( MonadRandom m, MonadError e m, AsError e, ...) => ...
+#+end_src
+
+While ~IO~ is an instance of ~MonadRandom~, it can only throw ~IOException~, and ~IOException~ is not an instance of of ~AsError~.
+
+The solution is to use [[https://hackage-content.haskell.org/package/jose-0.13/docs/Crypto-JOSE-Error.html#v:runJOSE][~runJOSE~]] [fn:6], which adds the capability of throwing an arbitrary error into the context. One may need to manually perform a type application to help typechecker resolve the constraints:
+#+begin_src haskell
+  signingAction :: JOSE JWTError IO (SignedJWTWithHeader h)
+  signingAction = (signJWT jwk jwsHeader refreshClaimsSet)
+
+  runSigningAction :: IO (Either JWTError (SignedJWTWithHeader h))
+  runSigningAction = runJOSE @JWTError signingAction
+#+end_src
+
+** Encoding/Decoding to/from ByteString
+
+JWT needs to be in bytestring form when transported using HTTP headers. This is done using the following pair of functions from [[https://hackage-content.haskell.org/package/jose-0.13/docs/Crypto-JOSE-Compact.html][~Crypto.JOSE.Compact~]][fn:8]:
+#+begin_src haskell
+  encodeCompact :: ToCompact a => a -> ByteString
+  decodeCompact :: (FromCompact a, AsError e, MonadError e m) => ByteString -> m a
+#+end_src
+
+** Verifying
+
+
+
+* Correct Encoding Pipeline
+:PROPERTIES:
+:ID:       5dce0651-61f9-48e2-a5db-1cc47f4c6504
+:END:
+
+#+begin_src
+             Creating JWT                    |                   Reading JWT
+  Data ---> ByteString ---> String ---> StringOrURI ---> Text ---> ByteString ---> Data
+        |               |           |                |         |               |
+     encode          unpack    fromString          Lens  encodeUTF8      decodeStrict
+#+end_src
+
+* Footnotes
+
+[fn:8] ~jose~ Hackage, [[https://hackage-content.haskell.org/package/jose-0.13/docs/Crypto-JOSE-Compact.html][~Crypto.JOSE.Compact~]] 
+[fn:6] ~jose~ Hackage, [[https://hackage-content.haskell.org/package/jose-0.13/docs/Crypto-JOSE-Error.html][~Crypto.JOSE.Error~]] 
+
+[fn:7] RFC 7519, [[https://datatracker.ietf.org/doc/html/rfc7519#section-4.1][4.1. Registered Claim Names]] 
+
+[fn:5] ~lens~ Hackage, [[https://hackage.haskell.org/package/lens][~lens~: Lenses, Folds, and Traversals]]
+
+[fn:4] RFC 7519, [[https://datatracker.ietf.org/doc/html/rfc7519#section-4][JWT Claims]] 
+
+[fn:3] ~jose~ Hackage, [[https://hackage-content.haskell.org/package/jose-0.13/docs/Crypto-JWT.html][~Crypto.JWT~]] 
+
+[fn:2] ~jose~ Hackage, [[https://hackage-content.haskell.org/package/jose-0.13/docs/Crypto-JOSE-JWK.html][~Crypto.JOSE.JWK~]]
+
+[fn:1] RFC Editor, [[https://www.rfc-editor.org/info/rfc7517/][RFC 7517: JSON Web Key (JWK)]]

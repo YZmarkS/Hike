@@ -35,17 +35,14 @@ type instance AuthServerData (AuthProtect "hike-jwt-access-auth") = AccessUserId
 
 accessAuthHandlerLogic :: JWK -> Request -> Handler AccessUserId
 accessAuthHandlerLogic jwtSigningKey request = do
-  { liftIO $ print $ requestHeaders request
-  ; let maybeAccessJWTBytes = do { cookiesBytes <- lookup "Cookie" $ requestHeaders request
+  { let maybeAccessJWTBytes = do { cookiesBytes <- lookup "Cookie" $ requestHeaders request
                                  ; let cookies = parseCookies cookiesBytes
                                  ; lookup "Hike-Access-JWT" cookies
                                  }
-  ; liftIO $ print ("Raw JWT bytes: " <> show maybeAccessJWTBytes)
   ; accessJWTBytes <- case maybeAccessJWTBytes of
                         Nothing -> throwError err400
                         Just bytes -> return $ fromStrict bytes
   ; claimsSetResult <- liftIO $ verifyAccessJWT jwtSigningKey accessJWTBytes
-  ; liftIO $ print ("Verification result: " <> show claimsSetResult)
   ; accessClaimsSet <- case claimsSetResult of
                    Left _ -> throwError $ err401 { errBody = "Invalid access token" }
                    Right accessClaimsSet' -> return accessClaimsSet'
@@ -58,7 +55,6 @@ accessAuthHandlerLogic jwtSigningKey request = do
                  Nothing -> throwError $ err401 { errBody = "sub isn't a string" }
                  Just subText' -> return subText'
   ; let maybeUserId :: Maybe UserId = decodeStrict (encodeUtf8 subText)
-  ; liftIO $ print ("sub decode result: " <> show maybeUserId)
   ; userId <- case maybeUserId of
                 Nothing -> throwError $ err401 { errBody = "Cannot decode sub" }
                 Just userId' -> return userId'
