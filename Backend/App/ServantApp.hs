@@ -35,6 +35,7 @@ userHandler = MkUserAPI
   { postUser = postUserHandler
   , postLogin = postLoginHandler
   , getNothing = getNothingHandler
+  , postRefresh = postRefreshHandler
   }
 
 tripHandler :: HikeAuthResult -> TripAPI (AsServerT AppM)
@@ -71,11 +72,13 @@ membershipResourceHandler hikeAuthResult tripId = MkMembershipResourceAPI
 
 applicationCreation :: ConnectionPool -> IO Application
 applicationCreation pool = do
-  { jwtSigningKey <- generateJWKForJWT
-  ; let jwtConfig = defaultJWTSettings jwtSigningKey
+  { jsonWebKey <- generateJWKForJWT
+  ; let jwtConfig = defaultJWTSettings jsonWebKey
         authConfig = authCheck pool
-        accessAuthHandler = jwkToAccessAuthHandler jwtSigningKey
+        accessAuthHandler = mkAccessAuthHandler jsonWebKey
+        refreshAuthHandler = mkRefreshAuthHandler pool jsonWebKey
         context = accessAuthHandler
+          :. refreshAuthHandler
           :. jwtConfig
           :. defaultCookieSettings
           :. authConfig
@@ -84,6 +87,6 @@ applicationCreation pool = do
     simpleCors $
     provideOptions (genericApi (Proxy @API)) $
     genericServeTWithContext
-    (`runReaderT` (MkAppState { dbPool = pool, jwk = jwtSigningKey }))
+    (`runReaderT` (MkAppState { dbPool = pool, jwk = jsonWebKey }))
     handler
     context }

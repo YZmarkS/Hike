@@ -6,13 +6,13 @@ import Database.Persist.Sql
 import Model
 import Types
 
-upsertRefreshJWT :: UserId -> ByteString -> AppM (Entity RefreshToken)
-upsertRefreshJWT userId refreshJWT = do
-  { let record = RefreshToken userId refreshJWT
-  ; pool <- asks dbPool
-  ; let upsertAction = upsertBy
-                       (UniqueUserId userId)
-                       record
-                       [RefreshTokenRefreshJwt =. refreshJWT]
-  ; liftIO $ runSqlPool upsertAction pool
-}
+-- upsertRefreshJWT :: UserId -> ByteString -> AppM (Entity RefreshToken)
+-- upsertRefreshJWT userId refreshJWT = do
+--   { let record = RefreshToken userId refreshJWT False
+--   ; pool <- asks dbPool
+--   ; let upsertAction = upsertBy
+--                        (UniqueUserIdToken userId refreshJWT)
+--                        record
+--                        [RefreshTokenRefreshJwt =. refreshJWT]
+--   ; liftIO $ runSqlPool upsertAction pool
+-- }

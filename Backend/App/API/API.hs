@@ -34,7 +34,13 @@ data UserAPI mode = MkUserAPI
                                        ]
                                UserId)
   , getNothing ::
-      mode :- AuthProtect "hike-jwt-access-auth" :> "nothing" :> GetNoContent
+      mode :- AuthProtect "hike-access-jwt-auth" :> "nothing" :> GetNoContent
+  , postRefresh ::
+      mode :- AuthProtect "hike-refresh-jwt-auth" :> "refresh"
+      :> PostCreated '[JSON] (Headers '[ Header' '[Optional, Strict] "Set-Cookie" SetCookie
+                                       , Header' '[Optional, Strict] "Set-Cookie" SetCookie
+                                       ]
+                               UserId)
   } deriving (Generic)
 
 data TripAPI mode = MkTripAPI

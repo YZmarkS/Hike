@@ -32,8 +32,9 @@ User
 
 RefreshToken
     userId UserId
-    refreshJwt ByteString
-    UniqueUserId userId
+    refreshJWT ByteString sql=refresh_JWT
+    revoked Bool
+    UniqueUserIdToken userId refreshJWT
     deriving Eq Show
 
 Trip json

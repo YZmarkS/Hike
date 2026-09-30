@@ -35,7 +35,7 @@ instance HasClaimsSet RefreshClaimsSet where
   claimsSet f (RefreshClaimsSet innerClaimsSet) = fmap RefreshClaimsSet (f innerClaimsSet)
 
 accessLifespan :: NominalDiffTime
-accessLifespan = 60 :: NominalDiffTime
+accessLifespan = 20 :: NominalDiffTime
 
 refreshLifespan :: NominalDiffTime
 refreshLifespan = 86400 :: NominalDiffTime

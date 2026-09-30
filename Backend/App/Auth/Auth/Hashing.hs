@@ -31,10 +31,10 @@ genSaltThenHash password = do
       CryptoFailed err -> return $ CryptoFailed err
   }
 
-hashAndCompare ::
+hashTo ::
   (ByteArrayAccess salt, ByteArray target)
-  => Text -> salt -> target -> Bool
-hashAndCompare password salt target =
+  => (Text, salt) -> target -> Bool
+hashTo (password, salt) target =
   let passwordAsBytes = encodeUtf8 password
       hashResult = hash argonOptions passwordAsBytes salt hashLength
   in case hashResult of

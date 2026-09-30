@@ -43,16 +43,15 @@ postLoginHandler login = do
   ; pool <- asks dbPool
   ; jwk <- asks jwk
   ; maybeUser :: Maybe (Entity User) <- liftIO $ runSqlPool (getBy $ UniqueEmail email) pool
-  ; userEntity <- case maybeUser of
-                    Nothing -> throwError err401
-                    Just user -> return user
+  ; userEntity <- maybe (throwError err401) return maybeUser
   ; let user = entityVal userEntity
         userId = entityKey userEntity
         salt = userSalt user
         hashedPassword = userHashedPassword user
-  ; unless (hashAndCompare password salt hashedPassword) $ throwError err401
+  ; unless ((password, salt) `hashTo` hashedPassword) $ throwError err401
   ; (accessJWT, refreshJWT) <- lift $ generateUserTokens jwk userId
-  ; _ <- upsertRefreshJWT userId refreshJWT
+  ; newTokenResult <- liftIO $ runSqlPool (insertBy $ RefreshToken userId refreshJWT False) pool
+  ; _ <- either (const $ throwError err409) return newTokenResult
   ; let setAccessJWTCookie = defaultSetCookie
                              { setCookieName = "Hike-Access-JWT"
                              , setCookieValue = accessJWT
@@ -68,6 +67,30 @@ postLoginHandler login = do
 
 getNothingHandler :: AccessUserId -> AppM NoContent
 getNothingHandler _ = return NoContent
+
+postRefreshHandler :: RefreshUserId -> AppM (Headers '[ Header' '[Optional, Strict] "Set-Cookie" SetCookie
+                                                      , Header' '[Optional, Strict] "Set-Cookie" SetCookie
+                                                      ]
+                                             UserId)
+
+postRefreshHandler (RefreshUserId userId) = do
+  { jsonWebKey <- asks jwk
+  ; pool <- asks dbPool
+  ; (accessJWT, refreshJWT) <- lift $ generateUserTokens jsonWebKey userId
+  ; let setAccessJWTCookie = defaultSetCookie
+                             { setCookieName = "Hike-Access-JWT"
+                             , setCookieValue = accessJWT
+                             }
+        setRefreshJWTCookie = defaultSetCookie
+                              { setCookieName = "Hike-Refresh-JWT"
+                              , setCookieValue = refreshJWT
+                              }
+  ; newTokenResult <- liftIO $ runSqlPool (insertBy $ RefreshToken userId refreshJWT False) pool
+  ; _ <- either (const $ throwError err409) return newTokenResult
+  ; return $ userId
+    & addHeader' setAccessJWTCookie
+    & addHeader' setRefreshJWTCookie
+  }
 
 getAllUsersHandler :: AppM [PublicUserData]
 getAllUsersHandler = do
