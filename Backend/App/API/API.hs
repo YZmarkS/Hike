@@ -16,7 +16,7 @@ import Web.Cookie
 data API mode = MkAPI
   { admin :: mode :- "admin" :> NamedRoutes AdminAPI
   , user :: mode :- "user" :> NamedRoutes UserAPI
-  , trip :: mode :- Auth '[SA.BasicAuth] UserId :> "trips" :> NamedRoutes API.TripAPI
+  , trip :: mode :- AuthProtect "hike-access-jwt-auth" :> "trips" :> NamedRoutes API.TripAPI
   } deriving (Generic)
 
 data AdminAPI mode = MkAdminAPI

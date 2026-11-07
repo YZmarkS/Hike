@@ -14,10 +14,9 @@ import Servant
 import Model
 import Types
 
-postTripHandler :: HikeAuthResult -> Trip -> AppM TripId
-postTripHandler hikeAuthResult trip = do
-  { userId <- extractUserId hikeAuthResult
-  ; pool <- asks dbPool
+postTripHandler :: AccessUserId -> Trip -> AppM TripId
+postTripHandler (AccessUserId userId) trip = do
+  { pool <- asks dbPool
   ; let canonicalTrip = trip { tripOwnerId = userId }
   ; let action = do { Just tripId <- P.insertUnique canonicalTrip
                     ; Just _ <- P.insertUnique $ Membership userId tripId
@@ -34,10 +33,9 @@ getAllTripsHandler = do
   { pool <- asks dbPool
   ; liftIO $ runSqlPool (P.selectList [] []) pool }
 
-getUserTripsHandler :: HikeAuthResult -> AppM [Entity Trip]
-getUserTripsHandler hikeAuthResult = do
-  { userId <- extractUserId hikeAuthResult
-  ; pool <- asks dbPool
+getUserTripsHandler :: AccessUserId -> AppM [Entity Trip]
+getUserTripsHandler (AccessUserId userId) = do
+  { pool <- asks dbPool
   ; liftIO $ runSqlPool (do { select $ do
                                 { (membership :& trip) <-
                                       from $ table @Membership
@@ -49,18 +47,16 @@ getUserTripsHandler hikeAuthResult = do
                             } ) pool
   }
 
-patchRenameHandler :: HikeAuthResult -> TripId -> Text -> AppM String
-patchRenameHandler hikeAuthResult tripId newName = do
-  { userId <- extractUserId hikeAuthResult
-  ; userId `isOwnerOf` tripId
+patchRenameHandler :: AccessUserId -> TripId -> Text -> AppM String
+patchRenameHandler (AccessUserId userId) tripId newName = do
+  { userId `isOwnerOf` tripId
   ; pool <- asks dbPool
   ; liftIO $ runSqlPool (P.update tripId [ TripName P.=. newName ]) pool
   ; return "Renamed" }
 
-deleteTripHandler :: HikeAuthResult -> TripId -> AppM String
-deleteTripHandler hikeAuthResult tripId = do
-  { userId <- extractUserId hikeAuthResult
-  ; isOwnerOf userId tripId
+deleteTripHandler :: AccessUserId -> TripId -> AppM String
+deleteTripHandler (AccessUserId userId) tripId = do
+  { isOwnerOf userId tripId
   ; pool <- asks dbPool
   ; liftIO $ runSqlPool (deleteWhere [TripId P.==. tripId]) pool
   ; return "Deleted" }

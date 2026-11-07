@@ -8,7 +8,6 @@ import Control.Monad.IO.Class
 import Control.Monad.Reader
 import Data.Function
 import Database.Persist.Sqlite
-import Handlers.Internal
 import Model
 import Servant
 import Types
@@ -29,7 +28,7 @@ postUserHandler signUp = do
   ; pool <- asks dbPool
   ; sqlResult <- liftIO $ runSqlPool (insertUniqueEntity newUser) pool
   ; case sqlResult of
-      Nothing -> throwError $ err409 { errBody = "Cannot insert due to uniqueness" }
+      Nothing -> throwError $ err409 { errBody = "Debug: Non-unique user" }
       Just newUserId -> return $ entityKey newUserId
   }
 
@@ -68,11 +67,20 @@ postLoginHandler login = do
 getNothingHandler :: AccessUserId -> AppM NoContent
 getNothingHandler _ = return NoContent
 
+{- Refresh Tokens
+
+Generate new access and refresh token.
+
+I have considered whether refreshing should invalidate the old refresh token.
+There is a risk of DDoSing the server with refresh request, which will also fill
+up the database with refresh tokens.
+Given this software is meant to be self-hosted, I don't think this will be an
+issue.
+-}
 postRefreshHandler :: RefreshUserId -> AppM (Headers '[ Header' '[Optional, Strict] "Set-Cookie" SetCookie
                                                       , Header' '[Optional, Strict] "Set-Cookie" SetCookie
                                                       ]
                                              UserId)
-
 postRefreshHandler (RefreshUserId userId) = do
   { jsonWebKey <- asks jwk
   ; pool <- asks dbPool

@@ -12,20 +12,18 @@ import Model
 import Servant
 import Types
 
-postNewMembershipServer :: HikeAuthResult -> TripId -> UserId -> AppM MembershipId
-postNewMembershipServer hikeAuthResult tripId newUserId = do
-  { userId <- extractUserId hikeAuthResult
-  ; userId `isOwnerOf` tripId
+postNewMembershipServer :: AccessUserId -> TripId -> UserId -> AppM MembershipId
+postNewMembershipServer (AccessUserId userId) tripId newUserId = do
+  { userId `isOwnerOf` tripId
   ; pool <- asks dbPool
   ; maybeMembershipId <- liftIO $ runSqlPool (insertUnique $ Membership newUserId tripId) pool
   ; case maybeMembershipId of
-      Nothing -> throwError $ err409 { errBody = "Cannot add membership" }
+      Nothing -> throwError $ err409 { errBody = "Debug: Non-unique membership" }
       Just membershipId -> return membershipId }
 
-getTripMembersServer :: HikeAuthResult -> TripId -> AppM [PublicUserData]
-getTripMembersServer hikeAuthResult tripId = do
-  { userId <- extractUserId hikeAuthResult
-  ; userId `isMemberOf` tripId
+getTripMembersServer :: AccessUserId -> TripId -> AppM [PublicUserData]
+getTripMembersServer (AccessUserId userId) tripId = do
+  { userId `isMemberOf` tripId
   ; pool <- asks dbPool
   ; let selectMembers =
             select $ do

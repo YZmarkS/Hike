@@ -11,20 +11,18 @@ import Servant
 import Model
 import Types
 
-postPlaceHandler :: HikeAuthResult -> TripId -> Place -> AppM PlaceId
-postPlaceHandler hikeAuthResult tripId place = do
-  { userId <- extractUserId hikeAuthResult
-  ; userId `isMemberOf` tripId
+postPlaceHandler :: AccessUserId -> TripId -> Place -> AppM PlaceId
+postPlaceHandler (AccessUserId userId) tripId place = do
+  { userId `isMemberOf` tripId
   ; let canonicalPlace = place { placeTripId = tripId, placeCreatorId = userId }
   ; pool <- asks dbPool
   ; maybePlaceId <- liftIO $ runSqlPool (insertUnique canonicalPlace) pool
   ; case maybePlaceId of
-      Nothing -> throwError $ err409 { errBody = "Cannot insert new place" }
+      Nothing -> throwError $ err409 { errBody = "Failure: Place insertion" }
       Just newId -> return newId }
 
-getPlacesHandler :: HikeAuthResult -> TripId -> AppM [Entity Place]
-getPlacesHandler hikeAuthResult tripId = do
-  { userId <- extractUserId hikeAuthResult
-  ; userId `isMemberOf` tripId
+getPlacesHandler :: AccessUserId -> TripId -> AppM [Entity Place]
+getPlacesHandler (AccessUserId userId) tripId = do
+  { userId `isMemberOf` tripId
   ; pool <- asks dbPool
   ; liftIO $ runSqlPool (selectList [PlaceTripId ==. tripId] []) pool }
